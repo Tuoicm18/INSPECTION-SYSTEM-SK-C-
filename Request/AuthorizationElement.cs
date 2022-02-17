@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace PluginICAOClientSDK.Request {
     public class AuthorizationElement {
-        public int oridnary { get; set; }
+        public int ordinary { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string description { get; set; }
@@ -16,12 +16,12 @@ namespace PluginICAOClientSDK.Request {
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string text { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public List<KeyValuePair<string, bool>> multipleSelect { get; set; }
+        public List<KeyValuePair<string, object>> multipleSelect { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public List<KeyValuePair<string, bool>> singleSelect { get; set; }
+        public List<KeyValuePair<string, object>> singleSelect { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public List<KeyValuePair<string, string>> nameValuePair { get; set; }
+        public List<KeyValuePair<string, object>> nameValuePair { get; set; }
     }
 }
