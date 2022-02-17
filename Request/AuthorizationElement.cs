@@ -16,12 +16,12 @@ namespace PluginICAOClientSDK.Request {
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string text { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public Dictionary<string, bool> multipleSelect { get; set; }
+        public List<KeyValuePair<string, bool>> multipleSelect { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public Dictionary<string, bool> singleSelect { get; set; }
+        public List<KeyValuePair<string, bool>> singleSelect { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public Dictionary<string, string> nameValuePair { get; set; }
+        public List<KeyValuePair<string, string>> nameValuePair { get; set; }
     }
 }
