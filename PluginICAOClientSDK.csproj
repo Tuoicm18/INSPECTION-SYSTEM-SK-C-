@@ -64,6 +64,7 @@
     <Compile Include="Models\CmdType.cs" />
     <Compile Include="Request\AuthorizationElement.cs" />
     <Compile Include="Request\NVP.cs" />
+    <Compile Include="Request\PrepareAuthData.cs" />
     <Compile Include="Request\SingleSelect.cs" />
     <Compile Include="Models\RequireBiometricAuth.cs" />
     <Compile Include="Models\RequireConnectDevice.cs" />
