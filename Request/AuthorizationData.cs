@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 namespace PluginICAOClientSDK.Request {
     public class AuthorizationData {
         public List<AuthorizationElement> authContentList { get; set; }
-        public List<AuthorizationElement> multipleSelectedList { get; set; }
-        public List<AuthorizationElement> singleSelectedList { get; set; }
+        public List<AuthorizationElement> multipleSelectList { get; set; }
+        public List<AuthorizationElement> singleSelectList { get; set; }
         public List<AuthorizationElement> nameValuePairList { get; set; }
     }
 }
