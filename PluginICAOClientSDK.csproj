@@ -56,6 +56,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ISExtentions.cs" />
     <Compile Include="ISMessage.cs" />
     <Compile Include="ISPluginClient.cs" />
     <Compile Include="ISRequest.cs" />

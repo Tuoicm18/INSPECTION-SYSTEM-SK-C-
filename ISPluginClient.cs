@@ -220,7 +220,7 @@ namespace PluginICAOClientSDK {
             req.requestID = reqID;
             req.data = requireBiometricAuth;
 
-            LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
+            LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req, ISExtentions.settingsJsonDuplicateDic) + "]");
 
             ResponseSync<object> responseSync = new ResponseSync<object>();
             responseSync.cmdType = cmdType;
@@ -232,7 +232,7 @@ namespace PluginICAOClientSDK {
             if (this.listener != null) {
                 this.listener.doSend(cmdType, reqID, req);
             }
-            wsClient.sendData(JsonConvert.SerializeObject(req));
+            wsClient.sendData(JsonConvert.SerializeObject(req, ISExtentions.settingsJsonDuplicateDic));
             return responseSync;
         }
         #endregion
