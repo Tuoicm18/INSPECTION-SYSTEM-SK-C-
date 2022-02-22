@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 namespace PluginICAOClientSDK.Request {
     public class AuthorizationData {
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string authorizationTitle { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public List<AuthorizationElement> authContentList { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]

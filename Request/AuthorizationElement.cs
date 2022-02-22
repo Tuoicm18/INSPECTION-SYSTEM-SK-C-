@@ -15,7 +15,7 @@ namespace PluginICAOClientSDK.Request {
         public int ordinary { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public string description { get; set; }
+        public string label { get; set; }
         public string title { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
