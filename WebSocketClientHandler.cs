@@ -261,7 +261,7 @@ namespace PluginICAOClientSDK {
                         if (!Enum.IsDefined(typeof(CmdType), resp.cmdType) || !resp.cmdType.Equals(sync.cmdType)) {
                             throw new ISPluginException("CmdType not match expect [" + sync.cmdType + "] but get [" + resp.cmdType + "]");
                         }
-                        if (resp.errorCode != Utils.SUCCESS) {
+                        if (resp.errorCode != Utils.SUCCESS && resp.errorCode != Utils.SUCCESS_FOR_DENIED_AUTH) {
                             throw new ISPluginException(resp.errorMessage + ", Error Code [" + resp.errorCode + "]");
                         }
 
