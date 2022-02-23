@@ -190,14 +190,6 @@ namespace PluginICAOClientSDK {
         #endregion
 
         #region BIOMETRIC AUTHENTICATION
-        public AuthorizationData deserializeJsonAuthorizationData(string jsonAuthorizationData) {
-            if (jsonAuthorizationData.Equals(string.Empty)) {
-                return null;
-            } else {
-                AuthorizationData authorizationData = JsonConvert.DeserializeObject<AuthorizationData>(jsonAuthorizationData);
-                return authorizationData;
-            }
-        }
         //
         // Summary:
         //     Return result biometric authentication true | false. * NOTE: Finger Type more score.

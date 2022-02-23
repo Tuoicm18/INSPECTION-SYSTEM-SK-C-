@@ -22,7 +22,7 @@ namespace PluginICAOClientSDK {
         private StringBuilder response;
         private readonly ISPluginClient.ISListener listener;
         private static readonly double TIME_RECONNECT = 10;
-        private static readonly int MAX_PING = 10;
+        private static readonly int MAX_PING = 15;
 
         public readonly Dictionary<string, ResponseSync<object>> request = new Dictionary<string, ResponseSync<object>>();
         private DelegateAutoDocument delegateAuto;
