@@ -8,6 +8,7 @@ namespace PluginICAOClientSDK.Response.BiometricAuth {
         public string biometricType { get; set; }
         public bool result { get; set; }
         public float score { get; set; }
+        public string JWT {get; set;}
         public string issueDetails { get; set; }
         public AuthorizationData authorizationData { get; set; }
     }
