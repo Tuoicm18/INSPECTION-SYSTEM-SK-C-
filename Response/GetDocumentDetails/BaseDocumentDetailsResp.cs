@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 
 namespace PluginICAOClientSDK.Response.GetDocumentDetails {
@@ -7,6 +8,8 @@ namespace PluginICAOClientSDK.Response.GetDocumentDetails {
         public string requestID { get; set; }
         public int errorCode { get; set; }
         public string errorMessage { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public DataDocumentDetails data { get; set; }
     }
 }
