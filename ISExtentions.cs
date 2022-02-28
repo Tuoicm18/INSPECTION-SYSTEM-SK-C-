@@ -35,12 +35,16 @@ namespace PluginICAOClientSDK {
 
         //Deserialize Authorization Data To Json String For Request Authentication
         public static AuthorizationData deserializeJsonAuthorizationData(string jsonAuthorizationData) {
-            if (jsonAuthorizationData.Equals(string.Empty)) {
-                return null;
-            }
-            else {
-                AuthorizationData authorizationData = JsonConvert.DeserializeObject<AuthorizationData>(jsonAuthorizationData);
-                return authorizationData;
+            try {
+                if (jsonAuthorizationData.Equals(string.Empty)) {
+                    return null;
+                }
+                else {
+                    AuthorizationData authorizationData = JsonConvert.DeserializeObject<AuthorizationData>(jsonAuthorizationData);
+                    return authorizationData;
+                }
+            } catch (Exception e) {
+                throw e;
             }
         }
     }
