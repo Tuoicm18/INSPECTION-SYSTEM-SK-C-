@@ -23,8 +23,8 @@ namespace PluginICAOClientSDK {
         /// </summary>
         /// <param name="endPointUrl">End point URL Websocket Server</param>
         /// <param name="listener">Listenner for Client Webscoket DeviceDetails, DocumentDetais...etc</param>
-        public ISPluginClient(string endPointUrl, bool secureConnect, DelegateAutoDocument delegateAuto , ISListener listener) {
-            wsClient = new WebSocketClientHandler(endPointUrl, secureConnect , delegateAuto, listener);
+        public ISPluginClient(string endPointUrl, bool secureConnect, DelegateAutoDocument delegateAuto, ISListener listener) {
+            wsClient = new WebSocketClientHandler(endPointUrl, secureConnect, delegateAuto, listener);
         }
 
         public ISPluginClient() { }
@@ -102,11 +102,11 @@ namespace PluginICAOClientSDK {
         //     Return device information.
         //
         // Exception: Unconnected exception occurs, some other exceptions.
-        public Response.DeviceDetails.BaseDeviceDetailsResp getDeviceDetails(bool deviceDetailsEnabled, bool presenceEnabled, TimeSpan timeoutMilliSec) {
-            return (Response.DeviceDetails.BaseDeviceDetailsResp)getDeviceDetailsAsync(deviceDetailsEnabled, presenceEnabled, null).waitResponse(timeoutMilliSec);
+        public Response.DeviceDetails.BaseDeviceDetailsResp getDeviceDetails(bool deviceDetailsEnabled, bool presenceEnabled, TimeSpan timeoutMilliSec, int timeOutInterVal) {
+            return (Response.DeviceDetails.BaseDeviceDetailsResp)getDeviceDetailsAsync(deviceDetailsEnabled, presenceEnabled, null, timeOutInterVal).waitResponse(timeoutMilliSec);
         }
 
-        private ResponseSync<object> getDeviceDetailsAsync(bool deviceDetailsEnabled, bool presenceEnabled, DeviceDetailsListener deviceDetailsListener) {
+        private ResponseSync<object> getDeviceDetailsAsync(bool deviceDetailsEnabled, bool presenceEnabled, DeviceDetailsListener deviceDetailsListener, int timeOutInterVal) {
             string cmdType = Utils.ToDescription(CmdType.GetDeviceDetails);
             string reqID = Utils.getUUID();
             RequireDeviceDetails requireDeviceDetails = new RequireDeviceDetails();
@@ -116,8 +116,9 @@ namespace PluginICAOClientSDK {
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = Utils.ToDescription(CmdType.GetDeviceDetails);
             req.requestID = reqID;
+            req.timeoutInterVal = timeOutInterVal;
             req.data = requireDeviceDetails;
-            
+
             LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
 
             ResponseSync<object> responseSync = new ResponseSync<object>();
@@ -145,14 +146,15 @@ namespace PluginICAOClientSDK {
         //
         // Exception: Unconnected exception occurs, some other exceptions.
         public BaseDocumentDetailsResp getDocumentDetails(bool mrzEnabled, bool imageEnabled,
-                                                      bool dataGroupEnabled, bool optionalDetailsEnabled,
-                                                      TimeSpan timeoutMilliSec, DocumentDetailsListener documentDetailsListener) {
-            return (BaseDocumentDetailsResp)getDocumentDetailsAsync(mrzEnabled, imageEnabled,
-                                                                dataGroupEnabled, optionalDetailsEnabled, documentDetailsListener).waitResponse(timeoutMilliSec);
+                                                          bool dataGroupEnabled, bool optionalDetailsEnabled,
+                                                          TimeSpan timeoutMilliSec, DocumentDetailsListener documentDetailsListener,
+                                                          int timeOutInterVal) {
+            return (BaseDocumentDetailsResp)getDocumentDetailsAsync(mrzEnabled, imageEnabled, dataGroupEnabled,
+                                                                    optionalDetailsEnabled, documentDetailsListener, timeOutInterVal).waitResponse(timeoutMilliSec);
         }
         private ResponseSync<object> getDocumentDetailsAsync(bool mrzEnabled, bool imageEnabled,
-                                                             bool dataGroupEnabled, bool optionalDetailsEnabled, 
-                                                             DocumentDetailsListener documentDetailsListener) {
+                                                             bool dataGroupEnabled, bool optionalDetailsEnabled,
+                                                             DocumentDetailsListener documentDetailsListener, int timeOutInterVal) {
             string cmdType = Utils.ToDescription(CmdType.GetInfoDetails);
             string reqID = Utils.getUUID();
             RequireInfoDetails requireInfoDetails = new RequireInfoDetails();
@@ -164,6 +166,7 @@ namespace PluginICAOClientSDK {
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = cmdType;
             req.requestID = reqID;
+            req.timeoutInterVal = timeOutInterVal;
             req.data = requireInfoDetails;
 
             LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
@@ -198,16 +201,15 @@ namespace PluginICAOClientSDK {
         //     Return result biometric authentication.
         //
         // Exception: Unconnected exception occurs, some other exceptions.
-        public BaseBiometricAuthResp biometricAuthentication(string biometricType,
-                                                                   AuthorizationData authorizationData,
-                                                                   TimeSpan timeoutMilliSec) {
-            return (BaseBiometricAuthResp)biometricAuthenticationAsync(biometricType, authorizationData, null)
-                   .waitResponse(timeoutMilliSec);
+        public BaseBiometricAuthResp biometricAuthentication(string biometricType, AuthorizationData authorizationData,
+                                                             TimeSpan timeoutSec, int timeOutInterVal) {
+            return (BaseBiometricAuthResp)biometricAuthenticationAsync(biometricType, authorizationData, null, timeOutInterVal)
+                   .waitResponse(timeoutSec);
         }
 
-        private ResponseSync<object> biometricAuthenticationAsync(string biometricType, 
-                                                                  AuthorizationData authorizationData,
-                                                                  ISPluginClient.BiometricAuthenticationListener biometricAuthenticationListener) {
+        private ResponseSync<object> biometricAuthenticationAsync(string biometricType, AuthorizationData authorizationData,
+                                                                  ISPluginClient.BiometricAuthenticationListener biometricAuthenticationListener,
+                                                                  int timeOut) {
             string cmdType = Utils.ToDescription(CmdType.BiometricAuthentication);
             string reqID = Utils.getUUID();
 
@@ -218,6 +220,7 @@ namespace PluginICAOClientSDK {
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = cmdType;
             req.requestID = reqID;
+            req.timeoutInterVal = timeOut;
             req.data = requireBiometricAuth;
 
             LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
@@ -240,12 +243,13 @@ namespace PluginICAOClientSDK {
         #region CONNECT TO DEVICE
         public BaseConnectToDeviceResp connectToDevice(bool confirmEnabled, string confirmCode,
                                                    string clientName, ConfigConnect configConnect,
-                                                   TimeSpan timeoutMilliSec) {
-            return (BaseConnectToDeviceResp)connectToDeviceSync(confirmEnabled, confirmCode, clientName, configConnect, null).waitResponse(timeoutMilliSec);
+                                                   TimeSpan timeoutMilliSec, int timeOutInterVal) {
+            return (BaseConnectToDeviceResp)connectToDeviceSync(confirmEnabled, confirmCode, clientName, configConnect, null, timeOutInterVal).waitResponse(timeoutMilliSec);
         }
         private ResponseSync<object> connectToDeviceSync(bool confirmEnabled, string confirmCode,
                                                          string clientName, ConfigConnect configConnect,
-                                                         ConnectToDeviceListener connectToDeviceListener) {
+                                                         ConnectToDeviceListener connectToDeviceListener,
+                                                         int timeOutInterVal) {
             string cmdType = Utils.ToDescription(CmdType.ConnectToDevice);
             string reqID = Utils.getUUID();
 
@@ -258,6 +262,7 @@ namespace PluginICAOClientSDK {
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = cmdType;
             req.requestID = reqID;
+            req.timeoutInterVal = timeOutInterVal;
             req.data = requireConnectDevice;
 
             LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
