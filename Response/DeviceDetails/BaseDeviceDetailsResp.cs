@@ -6,7 +6,8 @@ namespace PluginICAOClientSDK.Response.DeviceDetails {
     public class BaseDeviceDetailsResp {
         public string cmdType { get; set; }
         public string requestID { get; set; }
-        public int timeOutInterVal { get; set; }
+        public int timeOutInterval { get; set; }
+
         public int errorCode { get; set; }
         public string errorMessage {get; set;}
 
