@@ -116,7 +116,7 @@ namespace PluginICAOClientSDK {
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = Utils.ToDescription(CmdType.GetDeviceDetails);
             req.requestID = reqID;
-            req.timeoutInterVal = timeOutInterVal;
+            req.timeoutInterval = timeOutInterVal;
             req.data = requireDeviceDetails;
 
             LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
@@ -166,7 +166,7 @@ namespace PluginICAOClientSDK {
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = cmdType;
             req.requestID = reqID;
-            req.timeoutInterVal = timeOutInterVal;
+            req.timeoutInterval = timeOutInterVal;
             req.data = requireInfoDetails;
 
             LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
@@ -220,7 +220,7 @@ namespace PluginICAOClientSDK {
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = cmdType;
             req.requestID = reqID;
-            req.timeoutInterVal = timeOut;
+            req.timeoutInterval = timeOut;
             req.data = requireBiometricAuth;
 
             LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
@@ -262,7 +262,7 @@ namespace PluginICAOClientSDK {
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = cmdType;
             req.requestID = reqID;
-            req.timeoutInterVal = timeOutInterVal;
+            req.timeoutInterval = timeOutInterVal;
             req.data = requireConnectDevice;
 
             LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
