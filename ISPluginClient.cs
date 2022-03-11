@@ -148,13 +148,15 @@ namespace PluginICAOClientSDK {
         public BaseDocumentDetailsResp getDocumentDetails(bool mrzEnabled, bool imageEnabled,
                                                           bool dataGroupEnabled, bool optionalDetailsEnabled,
                                                           TimeSpan timeoutMilliSec, DocumentDetailsListener documentDetailsListener,
-                                                          int timeOutInterVal) {
+                                                          int timeOutInterVal, string canValue) {
             return (BaseDocumentDetailsResp)getDocumentDetailsAsync(mrzEnabled, imageEnabled, dataGroupEnabled,
-                                                                    optionalDetailsEnabled, documentDetailsListener, timeOutInterVal).waitResponse(timeoutMilliSec);
+                                                                    optionalDetailsEnabled, documentDetailsListener, 
+                                                                    timeOutInterVal, canValue).waitResponse(timeoutMilliSec);
         }
         private ResponseSync<object> getDocumentDetailsAsync(bool mrzEnabled, bool imageEnabled,
                                                              bool dataGroupEnabled, bool optionalDetailsEnabled,
-                                                             DocumentDetailsListener documentDetailsListener, int timeOutInterVal) {
+                                                             DocumentDetailsListener documentDetailsListener, int timeOutInterVal,
+                                                             string canValue) {
             string cmdType = Utils.ToDescription(CmdType.GetInfoDetails);
             string reqID = Utils.getUUID();
             RequireInfoDetails requireInfoDetails = new RequireInfoDetails();
@@ -162,6 +164,7 @@ namespace PluginICAOClientSDK {
             requireInfoDetails.imageEnabled = imageEnabled;
             requireInfoDetails.dataGroupEnabled = dataGroupEnabled;
             requireInfoDetails.optionalDetailsEnabled = optionalDetailsEnabled;
+            requireInfoDetails.canValue = canValue;
 
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = cmdType;

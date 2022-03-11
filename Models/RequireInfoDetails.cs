@@ -6,5 +6,6 @@ namespace PluginICAOClientSDK.Models {
         public bool imageEnabled { get; set; }
         public bool dataGroupEnabled { get; set; }
         public bool optionalDetailsEnabled { get; set; }
+        public string canValue { get; set; }
     }
 }
