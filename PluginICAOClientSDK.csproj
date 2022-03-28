@@ -83,6 +83,8 @@
     <Compile Include="Response\DeviceDetails\BaseDeviceDetailsResp.cs" />
     <Compile Include="Response\DeviceDetails\DataDeviceDetails.cs" />
     <Compile Include="Request\MultipleSelect.cs" />
+    <Compile Include="Response\DisplayInformation\BaseDisplayInformation.cs" />
+    <Compile Include="Response\DisplayInformation\DataDisplayInformation.cs" />
     <Compile Include="Response\GetDocumentDetails\BaseDocumentDetailsResp.cs" />
     <Compile Include="Response\GetDocumentDetails\DataDocumentDetails.cs" />
     <Compile Include="Models\MultipleSelected.cs" />

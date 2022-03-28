@@ -17,6 +17,7 @@ namespace PluginICAOClientSDK {
         public ISPluginClient.DocumentDetailsListener documentDetailsListener;
         public ISPluginClient.BiometricAuthenticationListener biometricAuthenticationListener;
         public ISPluginClient.ConnectToDeviceListener connectToDeviceListener;
+        public ISPluginClient.DisplayInformationListener displayInformationListener;
 
         public T waitResponse (TimeSpan timeout) {
             try {

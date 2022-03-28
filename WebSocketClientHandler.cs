@@ -12,9 +12,11 @@ using System.Threading;
 using WebSocketSharp;
 using PluginICAOClientSDK.Response.BiometricAuth;
 using PluginICAOClientSDK.Response.ConnectToDevice;
+using PluginICAOClientSDK.Response.DisplayInformation;
 
 namespace PluginICAOClientSDK {
     public delegate void DelegateAutoDocument(BaseDocumentDetailsResp documentDetailsResp);
+    public delegate void DelegateAutoBiometricResult(BaseBiometricAuthResp baseBiometricAuthResp);
     public class WebSocketClientHandler {
         #region VARIABLE
         private static readonly Logger LOGGER = new Logger(LogLevel.Debug);
@@ -26,6 +28,7 @@ namespace PluginICAOClientSDK {
 
         public readonly Dictionary<string, ResponseSync<object>> request = new Dictionary<string, ResponseSync<object>>();
         private DelegateAutoDocument delegateAuto;
+        private DelegateAutoBiometricResult delegatebiometricResult;
 
         private Timer timeoutTimer;
         private readonly object timeoutTimerLock = new object();
@@ -36,17 +39,20 @@ namespace PluginICAOClientSDK {
             get { return isConnect; }
         }
 
-        public BaseDocumentDetailsResp documentRespAuto { get; set;}
+        public BaseDocumentDetailsResp documentRespAuto { get; set; }
         #endregion
 
         #region CONSTRUCTOR
-        public WebSocketClientHandler(string endPointUrl, bool secureConnect , DelegateAutoDocument dlgAuto, ISPluginClient.ISListener listener) {
+        public WebSocketClientHandler(string endPointUrl, bool secureConnect, DelegateAutoDocument dlgAuto,
+                                      ISPluginClient.ISListener listener, DelegateAutoBiometricResult delegateAutoBiometric) {
+
             ws = new WebSocket(endPointUrl);
             if (secureConnect) {
                 ws.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
             }
             this.listener = listener;
             this.delegateAuto = dlgAuto;
+            this.delegatebiometricResult = delegateAutoBiometric;
             SetWebSocketSharpEvents();
         }
         #endregion
@@ -119,7 +125,7 @@ namespace PluginICAOClientSDK {
         private void wsOnMessageHandle() {
             try {
                 ws.OnMessage += (sender, e) => {
-                    if(!ws.Ping()) {
+                    if (!ws.Ping()) {
                         //!ws.Ping()
                         //Try Ping RE-CONNECT
                         this.isConnect = false;
@@ -132,26 +138,28 @@ namespace PluginICAOClientSDK {
                         timerPingPong.Elapsed += (senderPingPong, ePingPong) => {
                             countPing++;
                             LOGGER.Debug("PING");
-                            if(ws.Ping()) {
+                            if (ws.Ping()) {
                                 isConnect = true;
 
                                 countPong++;
                                 LOGGER.Debug("PONG++");
-                            } else {
+                            }
+                            else {
                                 countPong--;
                                 LOGGER.Debug("PONG--");
                             }
-                            if(countPing == MAX_PING) {
+                            if (countPing == MAX_PING) {
                                 isConnect = true;
                                 LOGGER.Debug("PING = 10");
                                 timerPingPong.Stop();
-                                if(countPong < MAX_PING) {
+                                if (countPong < MAX_PING) {
                                     isConnect = false;
 
                                     LOGGER.Debug("PONG < PING");
                                     this.isShutdown = true;
                                     ws.CloseAsync();
-                                } else {
+                                }
+                                else {
                                     isConnect = true;
                                     LOGGER.Debug("PONG == PING");
                                     if (e.IsText) {
@@ -169,7 +177,8 @@ namespace PluginICAOClientSDK {
                             }
                         };
                         timerPingPong.Start();
-                    } else {
+                    }
+                    else {
                         isConnect = true;
 
                         if (e.IsText) {
@@ -194,7 +203,7 @@ namespace PluginICAOClientSDK {
 
         #region ERROR HANDLE
         private void wsOnErrorHandle() {
-            ws.OnError += (sender, e) => {               
+            ws.OnError += (sender, e) => {
                 // stop it here
                 StopTimeoutTimer();
                 LOGGER.Debug("SOCKET CLIENT ERROR MESSAGE " + e.Message);
@@ -202,8 +211,9 @@ namespace PluginICAOClientSDK {
                 if (!ws.IsAlive) {
                     //this.isShutdown = true;
                     ws.Close();
-                } else {
-                    if(ws.Ping()) {
+                }
+                else {
+                    if (ws.Ping()) {
                         ResetTimeoutTimer();
                     }
                 }
@@ -216,9 +226,10 @@ namespace PluginICAOClientSDK {
             ws.OnClose += (sender, e) => {
                 // and here
                 this.isConnect = false;
-                if(this.isShutdown) {
+                if (this.isShutdown) {
                     StopTimeoutTimer();
-                } else {
+                }
+                else {
                     ResetTimeoutTimer();
                 }
             };
@@ -261,9 +272,15 @@ namespace PluginICAOClientSDK {
                         if (!Enum.IsDefined(typeof(CmdType), resp.cmdType) || !resp.cmdType.Equals(sync.cmdType)) {
                             throw new ISPluginException("CmdType not match expect [" + sync.cmdType + "] but get [" + resp.cmdType + "]");
                         }
-                        if (resp.errorCode != Utils.SUCCESS && resp.errorCode != Utils.SUCCESS_FOR_DENIED_AUTH) {
+
+                        if (resp.errorCode != Utils.SUCCESS && resp.errorCode != Utils.ERR_FOR_DENIED_AUTH) {
                             throw new ISPluginException(resp.errorMessage + ", Error Code [" + resp.errorCode + "]");
                         }
+
+                        if (resp.errorCode != Utils.SUCCESS) {
+                            throw new ISPluginException(resp.errorMessage + ", Error Code [" + resp.errorCode + "]");
+                        }
+
 
                         string cmd = resp.cmdType;
                         switch (cmd) {
@@ -305,19 +322,31 @@ namespace PluginICAOClientSDK {
                             case "BiometricAuthentication":
                                 BaseBiometricAuthResp biometricAuthenticationResp = biometricAuthentication(json);
                                 sync.setSuccess(biometricAuthenticationResp);
-                                if(sync.biometricAuthenticationListener != null) {
+                                if (sync.biometricAuthenticationListener != null) {
                                     sync.biometricAuthenticationListener.onReceviedBiometricAuthenticaton(biometricAuthenticationResp);
                                 }
                                 break;
                             case "ConnectToDevice":
                                 BaseConnectToDeviceResp connectToDeviceResp = connectToDevice(json);
-                                connectToDeviceResp.cmdType = resp.cmdType;
-                                connectToDeviceResp.requestID = resp.requestID;
-                                connectToDeviceResp.errorCode = resp.errorCode;
-                                connectToDeviceResp.errorMessage = resp.errorMessage;
                                 sync.setSuccess(connectToDeviceResp);
-                                if(sync.connectToDeviceListener != null) {
+                                if (sync.connectToDeviceListener != null) {
                                     sync.connectToDeviceListener.onReceviedConnectToDevice(connectToDeviceResp);
+                                }
+
+                                //connectToDeviceResp.cmdType = resp.cmdType;
+                                //connectToDeviceResp.requestID = resp.requestID;
+                                //connectToDeviceResp.errorCode = resp.errorCode;
+                                //connectToDeviceResp.errorMessage = resp.errorMessage;
+                                //sync.setSuccess(connectToDeviceResp);
+                                //if (sync.connectToDeviceListener != null) {
+                                //    sync.connectToDeviceListener.onReceviedConnectToDevice(connectToDeviceResp);
+                                //}
+                                break;
+                            case "DisplayInformation":
+                                BaseDisplayInformation displayInfor = displayInformation(json);
+                                sync.setSuccess(displayInfor);
+                                if(sync.displayInformationListener != null) {
+                                    sync.displayInformationListener.onReceviedDisplayInformation(displayInfor);
                                 }
                                 break;
                         }
@@ -343,6 +372,15 @@ namespace PluginICAOClientSDK {
                         BaseDocumentDetailsResp documentDetails = getDocumentDetails(json);
                         delegateAuto(documentDetails);
                         //documentRespAuto = documentDetails;
+                    }
+                }
+                else if (Utils.ToDescription(CmdType.SendBiometricAuthentication).Equals(resp.cmdType)) {
+                    if(this.listener != null) {
+                        BaseBiometricAuthResp baseBiometricAuthResp = biometricAuthentication(json);
+                        listener.onReceivedBiometricResult(baseBiometricAuthResp);
+                    } else {
+                        BaseBiometricAuthResp baseBiometricAuthResp = biometricAuthentication(json);
+                        delegatebiometricResult(baseBiometricAuthResp);
                     }
                 }
                 else {
@@ -373,6 +411,13 @@ namespace PluginICAOClientSDK {
         private BaseConnectToDeviceResp connectToDevice(string json) {
             BaseConnectToDeviceResp connectDevice = JsonConvert.DeserializeObject<BaseConnectToDeviceResp>(json);
             return connectDevice;
+        }
+        #endregion
+
+        #region 4.6 DISPLAY INFORMATION
+        private BaseDisplayInformation displayInformation(string json) {
+            BaseDisplayInformation displayInformation = JsonConvert.DeserializeObject<BaseDisplayInformation>(json);
+            return displayInformation;
         }
         #endregion
     }

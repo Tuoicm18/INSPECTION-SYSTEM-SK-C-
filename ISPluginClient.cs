@@ -6,15 +6,18 @@ using PluginICAOClientSDK.Response.GetDocumentDetails;
 using PluginICAOClientSDK.Models;
 using PluginICAOClientSDK.Response.BiometricAuth;
 using PluginICAOClientSDK.Response.ConnectToDevice;
+using PluginICAOClientSDK.Response.DisplayInformation;
 
 namespace PluginICAOClientSDK {
     public class ISPluginClient {
+
         #region DELARCE VARIABLE
         private Logger LOGGER = new Logger(LogLevel.Debug);
 
         private WebSocketClientHandler wsClient;
         private ISListener listener;
         public DelegateAutoDocument delegateAuto;
+        public DelegateAutoBiometricResult delegateBiometricResult;
         #endregion
 
         #region CONSTRUCTOR
@@ -23,8 +26,9 @@ namespace PluginICAOClientSDK {
         /// </summary>
         /// <param name="endPointUrl">End point URL Websocket Server</param>
         /// <param name="listener">Listenner for Client Webscoket DeviceDetails, DocumentDetais...etc</param>
-        public ISPluginClient(string endPointUrl, bool secureConnect, DelegateAutoDocument delegateAuto, ISListener listener) {
-            wsClient = new WebSocketClientHandler(endPointUrl, secureConnect, delegateAuto, listener);
+        public ISPluginClient(string endPointUrl, bool secureConnect, DelegateAutoDocument delegateAuto, 
+                              ISListener listener, DelegateAutoBiometricResult delegateBiometricResult) {
+            wsClient = new WebSocketClientHandler(endPointUrl, secureConnect, delegateAuto, listener, delegateBiometricResult);
         }
 
         public ISPluginClient() { }
@@ -51,8 +55,13 @@ namespace PluginICAOClientSDK {
             void onReceviedConnectToDevice(BaseConnectToDeviceResp connectToDeviceResp);
         }
 
+        public interface DisplayInformationListener : DetailsListener {
+            void onReceviedDisplayInformation(BaseDisplayInformation baseDisplayInformation);
+        }
+
         public interface ISListener {
             bool onReceivedDocument(BaseDocumentDetailsResp document);
+            bool onReceivedBiometricResult(BaseBiometricAuthResp baseBiometricAuth);
             void onPreConnect();
             void onConnected();
             void onDisconnected();
@@ -274,6 +283,44 @@ namespace PluginICAOClientSDK {
             responseSync.cmdType = cmdType;
             responseSync.Wait = new System.Threading.CountdownEvent(1);
             responseSync.connectToDeviceListener = connectToDeviceListener;
+
+            wsClient.request.Add(reqID, responseSync);
+
+            if (this.listener != null) {
+                this.listener.doSend(cmdType, reqID, req);
+            }
+            wsClient.sendData(JsonConvert.SerializeObject(req));
+            return responseSync;
+        }
+        #endregion
+
+        #region DISPLAY INFORMATION
+        public BaseDisplayInformation displayInformation(string title, string type, string value,
+                                                         TimeSpan timeoutMilliSec, int timeOutInterVal) {
+            return (BaseDisplayInformation)displayInformationSync(title, type, value, null, timeOutInterVal).waitResponse(timeoutMilliSec);
+        }
+        private ResponseSync<object> displayInformationSync(string title, string type, string value,
+                                                            DisplayInformationListener displayInformationListener, int timeOutInterVal) {
+            string cmdType = Utils.ToDescription(CmdType.DisplayInformation);
+            string reqID = Utils.getUUID();
+
+            DataDisplayInformation dataDisplay = new DataDisplayInformation();
+            dataDisplay.title = title;
+            dataDisplay.type = type;
+            dataDisplay.value = value;
+
+            ISRequest<object> req = new ISRequest<object>();
+            req.cmdType = cmdType;
+            req.requestID = reqID;
+            req.timeOutInterval = timeOutInterVal;
+            req.data = dataDisplay;
+
+            LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
+
+            ResponseSync<object> responseSync = new ResponseSync<object>();
+            responseSync.cmdType = cmdType;
+            responseSync.Wait = new System.Threading.CountdownEvent(1);
+            responseSync.displayInformationListener = displayInformationListener;
 
             wsClient.request.Add(reqID, responseSync);
 

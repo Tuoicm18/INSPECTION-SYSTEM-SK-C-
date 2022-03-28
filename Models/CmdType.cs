@@ -13,5 +13,9 @@ namespace PluginICAOClientSDK.Models {
         BiometricAuthentication,
         [Description("ConnectToDevice")]
         ConnectToDevice,
+        [Description("DisplayInformation")]
+        DisplayInformation,
+        [Description("SendBiometricAuthentication")]
+        SendBiometricAuthentication,
     }
 }
