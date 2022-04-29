@@ -63,6 +63,7 @@
     <Compile Include="ISResponse.cs" />
     <Compile Include="Models\BiometricType.cs" />
     <Compile Include="Models\CmdType.cs" />
+    <Compile Include="Models\NotifyAutoReadDocument.cs" />
     <Compile Include="Request\AuthorizationElement.cs" />
     <Compile Include="Request\NVP.cs" />
     <Compile Include="Request\PrepareAuthData.cs" />

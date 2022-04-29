@@ -17,6 +17,7 @@ using PluginICAOClientSDK.Response.DisplayInformation;
 namespace PluginICAOClientSDK {
     public delegate void DelegateAutoDocument(BaseDocumentDetailsResp documentDetailsResp);
     public delegate void DelegateAutoBiometricResult(BaseBiometricAuthResp baseBiometricAuthResp);
+    public delegate void DelegateAutoReadNofity(string json);
     public class WebSocketClientHandler {
         #region VARIABLE
         private static readonly Logger LOGGER = new Logger(LogLevel.Debug);
@@ -29,6 +30,7 @@ namespace PluginICAOClientSDK {
         public readonly Dictionary<string, ResponseSync<object>> request = new Dictionary<string, ResponseSync<object>>();
         private DelegateAutoDocument delegateAuto;
         private DelegateAutoBiometricResult delegatebiometricResult;
+        private DelegateAutoReadNofity delegateAutoReadNofity;
 
         private Timer timeoutTimer;
         private readonly object timeoutTimerLock = new object();
@@ -44,7 +46,8 @@ namespace PluginICAOClientSDK {
 
         #region CONSTRUCTOR
         public WebSocketClientHandler(string endPointUrl, bool secureConnect, DelegateAutoDocument dlgAuto,
-                                      ISPluginClient.ISListener listener, DelegateAutoBiometricResult delegateAutoBiometric) {
+                                      ISPluginClient.ISListener listener, DelegateAutoBiometricResult delegateAutoBiometric,
+                                      DelegateAutoReadNofity dlgAutoReadNofity) {
 
             ws = new WebSocket(endPointUrl);
             if (secureConnect) {
@@ -53,6 +56,7 @@ namespace PluginICAOClientSDK {
             this.listener = listener;
             this.delegateAuto = dlgAuto;
             this.delegatebiometricResult = delegateAutoBiometric;
+            this.delegateAutoReadNofity = dlgAutoReadNofity;
             SetWebSocketSharpEvents();
         }
         #endregion
@@ -167,6 +171,7 @@ namespace PluginICAOClientSDK {
                                             response = new StringBuilder();
                                             response.Append(e.Data);
                                             processResponse(response.ToString());
+                                            delegateAutoReadNofity(response.ToString());
                                             //LOGGER.Debug("DATA RECIVED [TRY-PING-PONG] " + response.ToString());
                                         }
                                         else {
@@ -186,6 +191,7 @@ namespace PluginICAOClientSDK {
                                 response = new StringBuilder();
                                 response.Append(e.Data);
                                 processResponse(response.ToString());
+                                delegateAutoReadNofity(response.ToString());
                                 //LOGGER.Debug("DATA RECIVED [DEFAULT] " + response.ToString());
                             }
                             else {

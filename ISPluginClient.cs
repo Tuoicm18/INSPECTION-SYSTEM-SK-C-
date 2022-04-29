@@ -18,6 +18,7 @@ namespace PluginICAOClientSDK {
         private ISListener listener;
         public DelegateAutoDocument delegateAuto;
         public DelegateAutoBiometricResult delegateBiometricResult;
+        public DelegateAutoReadNofity delegateAutoReadNofity;
         #endregion
 
         #region CONSTRUCTOR
@@ -27,8 +28,8 @@ namespace PluginICAOClientSDK {
         /// <param name="endPointUrl">End point URL Websocket Server</param>
         /// <param name="listener">Listenner for Client Webscoket DeviceDetails, DocumentDetais...etc</param>
         public ISPluginClient(string endPointUrl, bool secureConnect, DelegateAutoDocument delegateAuto, 
-                              ISListener listener, DelegateAutoBiometricResult delegateBiometricResult) {
-            wsClient = new WebSocketClientHandler(endPointUrl, secureConnect, delegateAuto, listener, delegateBiometricResult);
+                              ISListener listener, DelegateAutoBiometricResult delegateBiometricResult, DelegateAutoReadNofity delegateAutoReadNofity) {
+            wsClient = new WebSocketClientHandler(endPointUrl, secureConnect, delegateAuto, listener, delegateBiometricResult, delegateAutoReadNofity);
         }
 
         public ISPluginClient() { }
