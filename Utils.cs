@@ -6,6 +6,7 @@ namespace PluginICAOClientSDK {
     public class Utils {
         public static readonly int SUCCESS = 0;
         public static readonly int ERR_FOR_DENIED_AUTH = 1302;
+        public static readonly int ERR_FOR_DENIED_CONNECTION = 1008;
         public static readonly int ERR_PUT_CARD = 1101;
         public static readonly int READ_TIMEOUT = 60;
 

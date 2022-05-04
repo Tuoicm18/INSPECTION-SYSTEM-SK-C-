@@ -49,15 +49,19 @@ namespace PluginICAOClientSDK {
                                       ISPluginClient.ISListener listener, DelegateAutoBiometricResult delegateAutoBiometric,
                                       DelegateAutoReadNofity dlgAutoReadNofity) {
 
-            ws = new WebSocket(endPointUrl);
-            if (secureConnect) {
-                ws.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
+            try {
+                ws = new WebSocket(endPointUrl);
+                if (secureConnect) {
+                    ws.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
+                }
+                this.listener = listener;
+                this.delegateAuto = dlgAuto;
+                this.delegatebiometricResult = delegateAutoBiometric;
+                this.delegateAutoReadNofity = dlgAutoReadNofity;
+                SetWebSocketSharpEvents();
+            } catch (Exception e) {
+                throw e;
             }
-            this.listener = listener;
-            this.delegateAuto = dlgAuto;
-            this.delegatebiometricResult = delegateAutoBiometric;
-            this.delegateAutoReadNofity = dlgAutoReadNofity;
-            SetWebSocketSharpEvents();
         }
         #endregion
 
@@ -92,11 +96,15 @@ namespace PluginICAOClientSDK {
 
         #region WEBSOCKET EVENTS
         public void SetWebSocketSharpEvents() {
-            wsOnOpenHandle();
-            wsOnMessageHandle();
-            wsOnErrorHandle();
-            wsOnCloseHandle();
-            wsConnect();
+            try {
+                wsOnOpenHandle();
+                wsOnMessageHandle();
+                wsOnErrorHandle();
+                wsOnCloseHandle();
+                wsConnect();
+            } catch (Exception e) {
+                throw e;
+            }
         }
         #endregion
 
@@ -108,20 +116,24 @@ namespace PluginICAOClientSDK {
 
         #region OPEN HANDLE
         private void wsOnOpenHandle() {
-            ws.OnOpen += (sender, e) => {
-                try {
-                    isConnect = true;
-                    LOGGER.Debug("CONNECT SUCCESSFULLY");
-                    //ResetTimeoutTimer();
-                    if (listener != null) {
-                        listener.onConnected();
+            try {
+                ws.OnOpen += (sender, e) => {
+                    try {
+                        isConnect = true;
+                        LOGGER.Debug("CONNECT SUCCESSFULLY");
+                        //ResetTimeoutTimer();
+                        if (listener != null) {
+                            listener.onConnected();
+                        }
                     }
-                }
-                catch (WebSocketException eConnect) {
-                    LOGGER.Debug("WEBSOCKET CLIETN FAILED TO CONNECT " + eConnect.ToString());
-                }
-                return;
-            };
+                    catch (WebSocketException eConnect) {
+                        LOGGER.Debug("WEBSOCKET CLIETN FAILED TO CONNECT " + eConnect.ToString());
+                    }
+                    return;
+                };
+            } catch (Exception ex) {
+                throw ex;
+            }
         }
         #endregion
 
@@ -192,7 +204,7 @@ namespace PluginICAOClientSDK {
                                 response.Append(e.Data);
                                 processResponse(response.ToString());
                                 delegateAutoReadNofity(response.ToString());
-                                //LOGGER.Debug("DATA RECIVED [DEFAULT] " + response.ToString());
+                                LOGGER.Debug("DATA RECIVED [DEFAULT] " + response.ToString());
                             }
                             else {
                                 LOGGER.Debug("DATA RECIVED [DEFAULT] IS NULL");
@@ -209,21 +221,25 @@ namespace PluginICAOClientSDK {
 
         #region ERROR HANDLE
         private void wsOnErrorHandle() {
-            ws.OnError += (sender, e) => {
-                // stop it here
-                StopTimeoutTimer();
-                LOGGER.Debug("SOCKET CLIENT ERROR MESSAGE " + e.Message);
-                //An exception has occurred during an OnMessage event. An error has occurred in closing the connection.
-                if (!ws.IsAlive) {
-                    //this.isShutdown = true;
-                    ws.Close();
-                }
-                else {
-                    if (ws.Ping()) {
-                        ResetTimeoutTimer();
+            try {
+                ws.OnError += (sender, e) => {
+                    // stop it here
+                    StopTimeoutTimer();
+                    LOGGER.Debug("SOCKET CLIENT ERROR MESSAGE " + e.Message);
+                    //An exception has occurred during an OnMessage event. An error has occurred in closing the connection.
+                    if (!ws.IsAlive) {
+                        //this.isShutdown = true;
+                        ws.Close();
                     }
-                }
-            };
+                    else {
+                        if (ws.Ping()) {
+                            ResetTimeoutTimer();
+                        }
+                    }
+                };
+            } catch (Exception ex) {
+                throw ex;
+            }
         }
         #endregion
 
@@ -390,9 +406,6 @@ namespace PluginICAOClientSDK {
                     }
                 }
                 else {
-                    if (resp.errorCode != Utils.SUCCESS) {
-                        throw new ISPluginException(resp.errorMessage + ", Error Code [" + resp.errorCode + "]");
-                    }
                     LOGGER.Debug("Not found Request with RequestID [" + reqID + "]" + " skip Response [" + json + "]");
                 }
             }
