@@ -390,6 +390,9 @@ namespace PluginICAOClientSDK {
                     }
                 }
                 else {
+                    if (resp.errorCode != Utils.SUCCESS) {
+                        throw new ISPluginException(resp.errorMessage + ", Error Code [" + resp.errorCode + "]");
+                    }
                     LOGGER.Debug("Not found Request with RequestID [" + reqID + "]" + " skip Response [" + json + "]");
                 }
             }
