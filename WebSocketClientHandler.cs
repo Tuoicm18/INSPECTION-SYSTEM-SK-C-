@@ -24,7 +24,7 @@ namespace PluginICAOClientSDK {
 
         private StringBuilder response;
         private readonly ISPluginClient.ISListener listener;
-        private static readonly double TIME_RECONNECT = 10;
+        private static readonly double TIME_RECONNECT = 20;
         private static readonly int MAX_PING = 15;
 
         public readonly Dictionary<string, ResponseSync<object>> request = new Dictionary<string, ResponseSync<object>>();
@@ -113,7 +113,7 @@ namespace PluginICAOClientSDK {
         #endregion
 
         #region CONNECT HANDLE
-        private void wsConnect() {
+        public void wsConnect() {
             ws.ConnectAsync();
         }
         #endregion
@@ -145,10 +145,13 @@ namespace PluginICAOClientSDK {
         private void wsOnMessageHandle() {
             try {
                 ws.OnMessage += (sender, e) => {
+                    delegateAutoReadNofity(e.Data);
+
                     BaseDeviceDetailsResp baseDeviceDetailsResp = JsonConvert.DeserializeObject<BaseDeviceDetailsResp>(e.Data);
                     if(null != baseDeviceDetailsResp) {
                         checkConnectionDenied = baseDeviceDetailsResp.errorCode;
                     }
+
                     if (!ws.Ping()) {
                         //!ws.Ping()
                         //Try Ping RE-CONNECT
@@ -304,7 +307,8 @@ namespace PluginICAOClientSDK {
                         }
 
                         if (resp.errorCode != Utils.SUCCESS && resp.errorCode != Utils.ERR_FOR_DENIED_AUTH) {
-                            throw new ISPluginException(resp.errorMessage + ", Error Code [" + resp.errorCode + "]");
+                            //throw new ISPluginException(resp.errorMessage + ", Error Code [" + resp.errorCode + "]");
+                            throw new ISPluginException(resp.errorCode, resp.errorMessage);
                         }
 
                         if (resp.errorCode != Utils.SUCCESS) {

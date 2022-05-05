@@ -35,6 +35,10 @@ namespace PluginICAOClientSDK {
         public ISPluginClient() { }
         #endregion
 
+        #region Test
+
+        #endregion
+
         #region INTERFACE INNER 
         public interface DetailsListener {
             void onError(Exception error);
@@ -99,7 +103,12 @@ namespace PluginICAOClientSDK {
 
         #region CHECK CONNECT FUNC
         public bool checkConnect() {
+            //return wsClient.IsConnect;
             return wsClient.IsConnect;
+        }
+
+        public void connectSocketServer() {
+            wsClient.wsConnect();
         }
         #endregion
 
