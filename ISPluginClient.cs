@@ -103,6 +103,12 @@ namespace PluginICAOClientSDK {
         }
         #endregion
 
+        #region CHECK CONNECTION DENIED
+        public int codeConnectionDenied() {
+            return wsClient.CheckConnectionDenied;
+        }
+        #endregion
+
         #region GET DEVICE DETAILS FUNC
         //
         // Summary:

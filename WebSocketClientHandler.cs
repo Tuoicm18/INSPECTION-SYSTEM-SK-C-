@@ -40,6 +40,10 @@ namespace PluginICAOClientSDK {
         public bool IsConnect {
             get { return isConnect; }
         }
+        private int checkConnectionDenied = 0;
+        public int CheckConnectionDenied {
+            get { return this.checkConnectionDenied; }
+        }
 
         public BaseDocumentDetailsResp documentRespAuto { get; set; }
         #endregion
@@ -141,6 +145,10 @@ namespace PluginICAOClientSDK {
         private void wsOnMessageHandle() {
             try {
                 ws.OnMessage += (sender, e) => {
+                    BaseDeviceDetailsResp baseDeviceDetailsResp = JsonConvert.DeserializeObject<BaseDeviceDetailsResp>(e.Data);
+                    if(null != baseDeviceDetailsResp) {
+                        checkConnectionDenied = baseDeviceDetailsResp.errorCode;
+                    }
                     if (!ws.Ping()) {
                         //!ws.Ping()
                         //Try Ping RE-CONNECT
@@ -300,7 +308,8 @@ namespace PluginICAOClientSDK {
                         }
 
                         if (resp.errorCode != Utils.SUCCESS) {
-                            throw new ISPluginException(resp.errorMessage + ", Error Code [" + resp.errorCode + "]");
+                            //throw new ISPluginException(resp.errorMessage + ", Error Code [" + resp.errorCode + "]");
+                            throw new ISPluginException(resp.errorCode, resp.errorMessage);
                         }
 
 
@@ -407,6 +416,10 @@ namespace PluginICAOClientSDK {
                 }
                 else {
                     LOGGER.Debug("Not found Request with RequestID [" + reqID + "]" + " skip Response [" + json + "]");
+                    if (resp.errorCode != Utils.SUCCESS) {
+                        //throw new ISPluginException(resp.errorMessage + ", Error Code [" + resp.errorCode + "]");
+                        throw new ISPluginException(resp.errorCode, resp.errorMessage);
+                    }
                 }
             }
             catch (Exception ex) {
