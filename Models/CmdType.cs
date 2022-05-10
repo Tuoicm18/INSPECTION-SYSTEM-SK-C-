@@ -17,5 +17,7 @@ namespace PluginICAOClientSDK.Models {
         DisplayInformation,
         [Description("SendBiometricAuthentication")]
         SendBiometricAuthentication,
+        [Description("CardDetectionEvent")]
+        CardDetectionEvent,
     }
 }

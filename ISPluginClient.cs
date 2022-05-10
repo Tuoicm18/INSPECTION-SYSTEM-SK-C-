@@ -7,6 +7,7 @@ using PluginICAOClientSDK.Models;
 using PluginICAOClientSDK.Response.BiometricAuth;
 using PluginICAOClientSDK.Response.ConnectToDevice;
 using PluginICAOClientSDK.Response.DisplayInformation;
+using PluginICAOClientSDK.Response.CardDetectionEvent;
 
 namespace PluginICAOClientSDK {
     public class ISPluginClient {
@@ -19,6 +20,7 @@ namespace PluginICAOClientSDK {
         public DelegateAutoDocument delegateAuto;
         public DelegateAutoBiometricResult delegateBiometricResult;
         public DelegateAutoReadNofity delegateAutoReadNofity;
+        public DelegateCardDetectionEvent delegateCardEvent;
         #endregion
 
         #region CONSTRUCTOR
@@ -27,9 +29,14 @@ namespace PluginICAOClientSDK {
         /// </summary>
         /// <param name="endPointUrl">End point URL Websocket Server</param>
         /// <param name="listener">Listenner for Client Webscoket DeviceDetails, DocumentDetais...etc</param>
-        public ISPluginClient(string endPointUrl, bool secureConnect, DelegateAutoDocument delegateAuto, 
-                              ISListener listener, DelegateAutoBiometricResult delegateBiometricResult, DelegateAutoReadNofity delegateAutoReadNofity) {
-            wsClient = new WebSocketClientHandler(endPointUrl, secureConnect, delegateAuto, listener, delegateBiometricResult, delegateAutoReadNofity);
+        public ISPluginClient(string endPointUrl, bool secureConnect, 
+                              DelegateAutoDocument delegateAuto, ISListener listener, 
+                              DelegateAutoBiometricResult delegateBiometricResult, DelegateAutoReadNofity delegateAutoReadNofity,
+                              DelegateCardDetectionEvent delegateCardDetection) {
+            wsClient = new WebSocketClientHandler(endPointUrl, secureConnect, 
+                                                  delegateAuto, listener,
+                                                  delegateBiometricResult, delegateAutoReadNofity,
+                                                  delegateCardDetection);
         }
 
         public ISPluginClient() { }
@@ -67,6 +74,7 @@ namespace PluginICAOClientSDK {
         public interface ISListener {
             bool onReceivedDocument(BaseDocumentDetailsResp document);
             bool onReceivedBiometricResult(BaseBiometricAuthResp baseBiometricAuth);
+            bool onReceviedCardDetectionEvent(BaseCardDetectionEventResp baseCardDetectionEvent);
             void onPreConnect();
             void onConnected();
             void onDisconnected();
@@ -173,15 +181,17 @@ namespace PluginICAOClientSDK {
         public BaseDocumentDetailsResp getDocumentDetails(bool mrzEnabled, bool imageEnabled,
                                                           bool dataGroupEnabled, bool optionalDetailsEnabled,
                                                           TimeSpan timeoutMilliSec, DocumentDetailsListener documentDetailsListener,
-                                                          int timeOutInterVal, string canValue) {
+                                                          int timeOutInterVal, string canValue,
+                                                          string challenge) {
+
             return (BaseDocumentDetailsResp)getDocumentDetailsAsync(mrzEnabled, imageEnabled, dataGroupEnabled,
                                                                     optionalDetailsEnabled, documentDetailsListener, 
-                                                                    timeOutInterVal, canValue).waitResponse(timeoutMilliSec);
+                                                                    timeOutInterVal, canValue, challenge).waitResponse(timeoutMilliSec);
         }
         private ResponseSync<object> getDocumentDetailsAsync(bool mrzEnabled, bool imageEnabled,
                                                              bool dataGroupEnabled, bool optionalDetailsEnabled,
                                                              DocumentDetailsListener documentDetailsListener, int timeOutInterVal,
-                                                             string canValue) {
+                                                             string canValue, string challenge) {
             string cmdType = Utils.ToDescription(CmdType.GetInfoDetails);
             string reqID = Utils.getUUID();
             RequireInfoDetails requireInfoDetails = new RequireInfoDetails();
@@ -190,6 +200,7 @@ namespace PluginICAOClientSDK {
             requireInfoDetails.dataGroupEnabled = dataGroupEnabled;
             requireInfoDetails.optionalDetailsEnabled = optionalDetailsEnabled;
             requireInfoDetails.canValue = canValue;
+            requireInfoDetails.challenge = challenge;
 
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = cmdType;

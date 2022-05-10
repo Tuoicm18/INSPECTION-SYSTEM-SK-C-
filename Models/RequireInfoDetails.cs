@@ -7,5 +7,6 @@ namespace PluginICAOClientSDK.Models {
         public bool dataGroupEnabled { get; set; }
         public bool optionalDetailsEnabled { get; set; }
         public string canValue { get; set; }
+        public string challenge { get; set; }
     }
 }

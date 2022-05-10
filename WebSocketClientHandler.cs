@@ -13,11 +13,13 @@ using WebSocketSharp;
 using PluginICAOClientSDK.Response.BiometricAuth;
 using PluginICAOClientSDK.Response.ConnectToDevice;
 using PluginICAOClientSDK.Response.DisplayInformation;
+using PluginICAOClientSDK.Response.CardDetectionEvent;
 
 namespace PluginICAOClientSDK {
     public delegate void DelegateAutoDocument(BaseDocumentDetailsResp documentDetailsResp);
     public delegate void DelegateAutoBiometricResult(BaseBiometricAuthResp baseBiometricAuthResp);
     public delegate void DelegateAutoReadNofity(string json);
+    public delegate void DelegateCardDetectionEvent(BaseCardDetectionEventResp cardDetectionEventResp);
     public class WebSocketClientHandler {
         #region VARIABLE
         private static readonly Logger LOGGER = new Logger(LogLevel.Debug);
@@ -31,6 +33,7 @@ namespace PluginICAOClientSDK {
         private DelegateAutoDocument delegateAuto;
         private DelegateAutoBiometricResult delegatebiometricResult;
         private DelegateAutoReadNofity delegateAutoReadNofity;
+        private DelegateCardDetectionEvent delegateCardEvent;
 
         private Timer timeoutTimer;
         private readonly object timeoutTimerLock = new object();
@@ -51,7 +54,7 @@ namespace PluginICAOClientSDK {
         #region CONSTRUCTOR
         public WebSocketClientHandler(string endPointUrl, bool secureConnect, DelegateAutoDocument dlgAuto,
                                       ISPluginClient.ISListener listener, DelegateAutoBiometricResult delegateAutoBiometric,
-                                      DelegateAutoReadNofity dlgAutoReadNofity) {
+                                      DelegateAutoReadNofity dlgAutoReadNofity, DelegateCardDetectionEvent dlgCardEvent) {
 
             try {
                 ws = new WebSocket(endPointUrl);
@@ -62,8 +65,10 @@ namespace PluginICAOClientSDK {
                 this.delegateAuto = dlgAuto;
                 this.delegatebiometricResult = delegateAutoBiometric;
                 this.delegateAutoReadNofity = dlgAutoReadNofity;
+                this.delegateCardEvent = dlgCardEvent;
                 SetWebSocketSharpEvents();
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 throw e;
             }
         }
@@ -106,7 +111,8 @@ namespace PluginICAOClientSDK {
                 wsOnErrorHandle();
                 wsOnCloseHandle();
                 wsConnect();
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 throw e;
             }
         }
@@ -135,7 +141,8 @@ namespace PluginICAOClientSDK {
                     }
                     return;
                 };
-            } catch (Exception ex) {
+            }
+            catch (Exception ex) {
                 throw ex;
             }
         }
@@ -148,7 +155,7 @@ namespace PluginICAOClientSDK {
                     delegateAutoReadNofity(e.Data);
 
                     BaseDeviceDetailsResp baseDeviceDetailsResp = JsonConvert.DeserializeObject<BaseDeviceDetailsResp>(e.Data);
-                    if(null != baseDeviceDetailsResp) {
+                    if (null != baseDeviceDetailsResp) {
                         checkConnectionDenied = baseDeviceDetailsResp.errorCode;
                     }
 
@@ -248,7 +255,8 @@ namespace PluginICAOClientSDK {
                         }
                     }
                 };
-            } catch (Exception ex) {
+            }
+            catch (Exception ex) {
                 throw ex;
             }
         }
@@ -380,7 +388,7 @@ namespace PluginICAOClientSDK {
                             case "DisplayInformation":
                                 BaseDisplayInformation displayInfor = displayInformation(json);
                                 sync.setSuccess(displayInfor);
-                                if(sync.displayInformationListener != null) {
+                                if (sync.displayInformationListener != null) {
                                     sync.displayInformationListener.onReceviedDisplayInformation(displayInfor);
                                 }
                                 break;
@@ -410,12 +418,22 @@ namespace PluginICAOClientSDK {
                     }
                 }
                 else if (Utils.ToDescription(CmdType.SendBiometricAuthentication).Equals(resp.cmdType)) {
-                    if(this.listener != null) {
+                    if (this.listener != null) {
                         BaseBiometricAuthResp baseBiometricAuthResp = biometricAuthentication(json);
                         listener.onReceivedBiometricResult(baseBiometricAuthResp);
-                    } else {
+                    }
+                    else {
                         BaseBiometricAuthResp baseBiometricAuthResp = biometricAuthentication(json);
                         delegatebiometricResult(baseBiometricAuthResp);
+                    }
+                }
+                else if (Utils.ToDescription(CmdType.CardDetectionEvent).Equals(resp.cmdType)) {
+                    if(this.listener != null) {
+                        BaseCardDetectionEventResp baseCardDetectionEventResp = cardDetectionEvent(json);
+                        listener.onReceviedCardDetectionEvent(baseCardDetectionEventResp);
+                    } else {
+                        BaseCardDetectionEventResp baseCardDetectionEventResp = cardDetectionEvent(json);
+                        delegateCardEvent(baseCardDetectionEventResp);
                     }
                 }
                 else {
@@ -457,6 +475,13 @@ namespace PluginICAOClientSDK {
         private BaseDisplayInformation displayInformation(string json) {
             BaseDisplayInformation displayInformation = JsonConvert.DeserializeObject<BaseDisplayInformation>(json);
             return displayInformation;
+        }
+        #endregion
+
+        #region CARD DETECTION EVENT 2022.05.10
+        private BaseCardDetectionEventResp cardDetectionEvent(string json) {
+            BaseCardDetectionEventResp baseCardDetectionEvent = JsonConvert.DeserializeObject<BaseCardDetectionEventResp>(json);
+            return baseCardDetectionEvent;
         }
         #endregion
     }
