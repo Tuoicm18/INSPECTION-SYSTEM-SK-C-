@@ -32,11 +32,11 @@ namespace PluginICAOClientSDK {
         public ISPluginClient(string endPointUrl, bool secureConnect, 
                               DelegateAutoDocument delegateAuto, ISListener listener, 
                               DelegateAutoBiometricResult delegateBiometricResult, DelegateAutoReadNofity delegateAutoReadNofity,
-                              DelegateCardDetectionEvent delegateCardDetection) {
+                              DelegateCardDetectionEvent delegateCardEvent) {
             wsClient = new WebSocketClientHandler(endPointUrl, secureConnect, 
                                                   delegateAuto, listener,
                                                   delegateBiometricResult, delegateAutoReadNofity,
-                                                  delegateCardDetection);
+                                                  delegateCardEvent);
         }
 
         public ISPluginClient() { }
