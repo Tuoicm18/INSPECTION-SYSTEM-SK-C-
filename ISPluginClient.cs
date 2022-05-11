@@ -241,19 +241,21 @@ namespace PluginICAOClientSDK {
         //
         // Exception: Unconnected exception occurs, some other exceptions.
         public BaseBiometricAuthResp biometricAuthentication(string biometricType, AuthorizationData authorizationData,
-                                                             TimeSpan timeoutSec, int timeOutInterVal) {
-            return (BaseBiometricAuthResp)biometricAuthenticationAsync(biometricType, authorizationData, null, timeOutInterVal)
+                                                             TimeSpan timeoutSec, int timeOutInterVal,
+                                                             string challenge) {
+            return (BaseBiometricAuthResp)biometricAuthenticationAsync(biometricType, authorizationData, null, timeOutInterVal, challenge)
                    .waitResponse(timeoutSec);
         }
 
         private ResponseSync<object> biometricAuthenticationAsync(string biometricType, AuthorizationData authorizationData,
                                                                   ISPluginClient.BiometricAuthenticationListener biometricAuthenticationListener,
-                                                                  int timeOut) {
+                                                                  int timeOut, string challenge) {
             string cmdType = Utils.ToDescription(CmdType.BiometricAuthentication);
             string reqID = Utils.getUUID();
 
             RequireBiometricAuth requireBiometricAuth = new RequireBiometricAuth();
             requireBiometricAuth.biometricType = biometricType;
+            requireBiometricAuth.challenge = challenge;
             requireBiometricAuth.authorizationData = authorizationData;
 
             ISRequest<object> req = new ISRequest<object>();

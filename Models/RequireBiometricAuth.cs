@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 namespace PluginICAOClientSDK.Models {
     public class RequireBiometricAuth {
         public string biometricType { get; set; }
+        public string challenge { get; set; }
         public AuthorizationData authorizationData { get; set; }
     }
 }
