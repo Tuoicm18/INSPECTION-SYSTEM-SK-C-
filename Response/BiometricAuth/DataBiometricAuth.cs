@@ -15,7 +15,7 @@ namespace PluginICAOClientSDK.Response.BiometricAuth {
         public int score { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public string JWT {get; set;}
+        public string jwt {get; set;}
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public int issueDetailCode { get; set; }

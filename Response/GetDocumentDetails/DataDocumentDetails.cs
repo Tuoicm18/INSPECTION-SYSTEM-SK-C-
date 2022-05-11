@@ -38,7 +38,7 @@ namespace PluginICAOClientSDK.Response.GetDocumentDetails {
         public byte[] image { get; set; }
         //Update 2022.05.11
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public string jwtPA { get; set; }
+        public string jwt { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public DataGroup dataGroup { get; set; }
