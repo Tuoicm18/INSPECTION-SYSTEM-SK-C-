@@ -9,6 +9,8 @@ namespace PluginICAOClientSDK.Request {
     public class AuthorizationData {
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string authorizationTitle { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string challenge { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public List<AuthorizationElement> authContentList { get; set; }

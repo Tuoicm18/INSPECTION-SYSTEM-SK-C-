@@ -29,11 +29,11 @@ namespace PluginICAOClientSDK {
         /// </summary>
         /// <param name="endPointUrl">End point URL Websocket Server</param>
         /// <param name="listener">Listenner for Client Webscoket DeviceDetails, DocumentDetais...etc</param>
-        public ISPluginClient(string endPointUrl, bool secureConnect, 
-                              DelegateAutoDocument delegateAuto, ISListener listener, 
+        public ISPluginClient(string endPointUrl, bool secureConnect,
+                              DelegateAutoDocument delegateAuto, ISListener listener,
                               DelegateAutoBiometricResult delegateBiometricResult, DelegateAutoReadNofity delegateAutoReadNofity,
                               DelegateCardDetectionEvent delegateCardEvent) {
-            wsClient = new WebSocketClientHandler(endPointUrl, secureConnect, 
+            wsClient = new WebSocketClientHandler(endPointUrl, secureConnect,
                                                   delegateAuto, listener,
                                                   delegateBiometricResult, delegateAutoReadNofity,
                                                   delegateCardEvent);
@@ -185,7 +185,7 @@ namespace PluginICAOClientSDK {
                                                           string challenge) {
 
             return (BaseDocumentDetailsResp)getDocumentDetailsAsync(mrzEnabled, imageEnabled, dataGroupEnabled,
-                                                                    optionalDetailsEnabled, documentDetailsListener, 
+                                                                    optionalDetailsEnabled, documentDetailsListener,
                                                                     timeOutInterVal, canValue, challenge).waitResponse(timeoutMilliSec);
         }
         private ResponseSync<object> getDocumentDetailsAsync(bool mrzEnabled, bool imageEnabled,
@@ -255,7 +255,7 @@ namespace PluginICAOClientSDK {
 
             RequireBiometricAuth requireBiometricAuth = new RequireBiometricAuth();
             requireBiometricAuth.biometricType = biometricType;
-            requireBiometricAuth.challenge = challenge;
+            requireBiometricAuth.authorizationData.challenge = challenge;
             requireBiometricAuth.authorizationData = authorizationData;
 
             ISRequest<object> req = new ISRequest<object>();
@@ -360,6 +360,5 @@ namespace PluginICAOClientSDK {
             return responseSync;
         }
         #endregion
-    }
     }
 }
