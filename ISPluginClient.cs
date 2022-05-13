@@ -255,7 +255,7 @@ namespace PluginICAOClientSDK {
 
             RequireBiometricAuth requireBiometricAuth = new RequireBiometricAuth();
             requireBiometricAuth.biometricType = biometricType;
-            requireBiometricAuth.authorizationData.challenge = challenge;
+            authorizationData.challenge = challenge;
             requireBiometricAuth.authorizationData = authorizationData;
 
             ISRequest<object> req = new ISRequest<object>();
