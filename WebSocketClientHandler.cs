@@ -14,6 +14,7 @@ using PluginICAOClientSDK.Response.ConnectToDevice;
 using PluginICAOClientSDK.Response.DisplayInformation;
 using PluginICAOClientSDK.Response.CardDetectionEvent;
 using WebSocketSharp;
+using PluginICAOClientSDK.Response.ScanDocument;
 
 namespace PluginICAOClientSDK {
     public delegate void DelegateAutoDocument(BaseDocumentDetailsResp documentDetailsResp);
@@ -21,8 +22,19 @@ namespace PluginICAOClientSDK {
     public delegate void DelegateAutoReadNofity(string json);
     public delegate void DelegateCardDetectionEvent(BaseCardDetectionEventResp cardDetectionEventResp);
     public class WebSocketClientHandler {
+
         #region VARIABLE
         private static readonly Logger LOGGER = new Logger(LogLevel.Debug);
+
+        #region CONST
+        private const string FUNC_GET_DEVICE_DETAILS = "GetDeviceDetails";
+        private const string FUNC_GET_INFO_DETAILS = "GetInfoDetails";
+        private const string FUNC_BIOMETRIC_AUTH = "BiometricAuthentication";
+        private const string FUNC_CONNECT_DEVICE = "ConnectToDevice";
+        private const string FUNC_DISPLAY_INFO = "DisplayInformation";
+        private const string FUNC_REFRESH = "Refresh";
+        private const string FUNC_SCAN_DOCUMENT = "ScanDocument";
+        #endregion
 
         private StringBuilder response;
         private readonly ISPluginClient.ISListener listener;
@@ -327,69 +339,52 @@ namespace PluginICAOClientSDK {
 
                         string cmd = resp.cmdType;
                         switch (cmd) {
-                            case "GetDeviceDetails":
+                            case FUNC_GET_DEVICE_DETAILS:
+                            case FUNC_REFRESH:
                                 BaseDeviceDetailsResp respDeviceDetails = JsonConvert.DeserializeObject<BaseDeviceDetailsResp>(json);
                                 sync.setSuccess(respDeviceDetails);
                                 if (sync.deviceDetailsListener != null) {
                                     sync.deviceDetailsListener.onReceivedDeviceDetails(respDeviceDetails);
                                 }
-
-                                //ISMessage<DeviceDetailsResp> ism = JsonConvert.DeserializeObject<ISMessage<DeviceDetailsResp>>(json);
-                                //ism.data.cmdType = resp.cmdType;
-                                //ism.data.requestID = resp.requestID;
-                                //ism.data.errorCode = resp.errorCode;
-                                //ism.data.errorMessage = resp.errorMessage;
-                                //sync.setSuccess(ism.data);
-                                //if (sync.deviceDetailsListener != null) {
-                                //    sync.deviceDetailsListener.onReceivedDeviceDetails(ism.data);
-                                //}
+                                if(sync.refreshListenner != null) {
+                                    sync.refreshListenner.onReceivedRefres(respDeviceDetails);
+                                }
                                 break;
                             case "SendInfoDetails":
-                            case "GetInfoDetails":
+                            case FUNC_GET_INFO_DETAILS:
                                 //BaseDocumentDetailsResp baseDocumentDetailsResp = JsonConvert.DeserializeObject<BaseDocumentDetailsResp>(json);
                                 BaseDocumentDetailsResp baseDocumentDetailsResp = getDocumentDetails(json);
                                 sync.setSuccess(baseDocumentDetailsResp);
                                 if (sync.documentDetailsListener != null) {
                                     sync.documentDetailsListener.onReceivedDocumentDetails(baseDocumentDetailsResp);
                                 }
-                                //DocumentDetailsResp documentDetails = getDocumentDetails(json);
-                                //documentDetails.cmdType = resp.cmdType;
-                                //documentDetails.requestID = resp.requestID;
-                                //documentDetails.errorCode = resp.errorCode;
-                                //documentDetails.errorMessage = resp.errorMessage;
-                                //sync.setSuccess(documentDetails);
-                                //if (sync.documentDetailsListener != null) {
-                                //    sync.documentDetailsListener.onReceivedDocumentDetails(documentDetails);
-                                //}
                                 break;
-                            case "BiometricAuthentication":
+                            case FUNC_BIOMETRIC_AUTH:
                                 BaseBiometricAuthResp biometricAuthenticationResp = biometricAuthentication(json);
                                 sync.setSuccess(biometricAuthenticationResp);
                                 if (sync.biometricAuthenticationListener != null) {
                                     sync.biometricAuthenticationListener.onReceviedBiometricAuthenticaton(biometricAuthenticationResp);
                                 }
                                 break;
-                            case "ConnectToDevice":
+                            case FUNC_CONNECT_DEVICE:
                                 BaseConnectToDeviceResp connectToDeviceResp = connectToDevice(json);
                                 sync.setSuccess(connectToDeviceResp);
                                 if (sync.connectToDeviceListener != null) {
                                     sync.connectToDeviceListener.onReceviedConnectToDevice(connectToDeviceResp);
                                 }
-
-                                //connectToDeviceResp.cmdType = resp.cmdType;
-                                //connectToDeviceResp.requestID = resp.requestID;
-                                //connectToDeviceResp.errorCode = resp.errorCode;
-                                //connectToDeviceResp.errorMessage = resp.errorMessage;
-                                //sync.setSuccess(connectToDeviceResp);
-                                //if (sync.connectToDeviceListener != null) {
-                                //    sync.connectToDeviceListener.onReceviedConnectToDevice(connectToDeviceResp);
-                                //}
                                 break;
-                            case "DisplayInformation":
+                            case FUNC_DISPLAY_INFO:
                                 BaseDisplayInformation displayInfor = displayInformation(json);
                                 sync.setSuccess(displayInfor);
                                 if (sync.displayInformationListener != null) {
                                     sync.displayInformationListener.onReceviedDisplayInformation(displayInfor);
+                                }
+                                break;
+                            case FUNC_SCAN_DOCUMENT:
+                                BaseScanDocumentResp scanDocumentResp = scanDocument(json);
+                                sync.setSuccess(scanDocumentResp);
+                                if(sync.scanDocumentListenner != null) {
+                                    sync.scanDocumentListenner.onReceviedScanDocument(scanDocumentResp);
                                 }
                                 break;
                         }
@@ -482,6 +477,13 @@ namespace PluginICAOClientSDK {
         private BaseCardDetectionEventResp cardDetectionEvent(string json) {
             BaseCardDetectionEventResp baseCardDetectionEvent = JsonConvert.DeserializeObject<BaseCardDetectionEventResp>(json);
             return baseCardDetectionEvent;
+        }
+        #endregion
+
+        #region SCAN DOCUMENT
+        private BaseScanDocumentResp scanDocument(string json) {
+            BaseScanDocumentResp scanDocument = JsonConvert.DeserializeObject<BaseScanDocumentResp>(json);
+            return scanDocument;
         }
         #endregion
     }

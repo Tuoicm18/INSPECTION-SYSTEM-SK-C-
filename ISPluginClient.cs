@@ -9,6 +9,7 @@ using PluginICAOClientSDK.Response.ConnectToDevice;
 using PluginICAOClientSDK.Response.DisplayInformation;
 using PluginICAOClientSDK.Response.CardDetectionEvent;
 using System.Collections.Generic;
+using PluginICAOClientSDK.Response.ScanDocument;
 
 namespace PluginICAOClientSDK {
     public class ISPluginClient {
@@ -56,6 +57,10 @@ namespace PluginICAOClientSDK {
             void onReceivedDeviceDetails(Response.DeviceDetails.BaseDeviceDetailsResp device);
         }
 
+        public interface RefreshListenner: DetailsListener {
+            void onReceivedRefres(Response.DeviceDetails.BaseDeviceDetailsResp deviceRefresh);
+        }
+
         public interface DocumentDetailsListener : DetailsListener {
             void onReceivedDocumentDetails(BaseDocumentDetailsResp document);
         }
@@ -70,6 +75,10 @@ namespace PluginICAOClientSDK {
 
         public interface DisplayInformationListener : DetailsListener {
             void onReceviedDisplayInformation(BaseDisplayInformation baseDisplayInformation);
+        }
+
+        public interface ScanDocumentListenner : DetailsListener {
+            void onReceviedScanDocument(BaseScanDocumentResp baseScanDocumentResp);
         }
 
         public interface ISListener {
@@ -364,6 +373,77 @@ namespace PluginICAOClientSDK {
             responseSync.cmdType = cmdType;
             responseSync.Wait = new System.Threading.CountdownEvent(1);
             responseSync.displayInformationListener = displayInformationListener;
+
+            wsClient.request.Add(reqID, responseSync);
+
+            if (this.listener != null) {
+                this.listener.doSend(cmdType, reqID, req);
+            }
+            wsClient.sendData(JsonConvert.SerializeObject(req));
+            return responseSync;
+        }
+        #endregion
+
+        #region REFRESH READER
+        public Response.DeviceDetails.BaseDeviceDetailsResp refresh(bool deviceDetailsEnabled, bool presenceEnabled, TimeSpan timeoutMilliSec, int timeOutInterVal) {
+            return (Response.DeviceDetails.BaseDeviceDetailsResp)refreshAsync(deviceDetailsEnabled, presenceEnabled, null, timeOutInterVal).waitResponse(timeoutMilliSec);
+        }
+
+        private ResponseSync<object> refreshAsync(bool deviceDetailsEnabled, bool presenceEnabled, DeviceDetailsListener deviceDetailsListener, int timeOutInterVal) {
+            string cmdType = Utils.ToDescription(CmdType.Refresh);
+            string reqID = Utils.getUUID();
+            RequireDeviceDetails requireDeviceDetails = new RequireDeviceDetails();
+            requireDeviceDetails.deviceDetailsEnabled = deviceDetailsEnabled;
+            requireDeviceDetails.presenceEnabled = presenceEnabled;
+
+            ISRequest<object> req = new ISRequest<object>();
+            req.cmdType = Utils.ToDescription(CmdType.Refresh);
+            req.requestID = reqID;
+            req.timeOutInterval = timeOutInterVal;
+            req.data = requireDeviceDetails;
+
+            LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
+
+            ResponseSync<object> responseSync = new ResponseSync<object>();
+            responseSync.cmdType = cmdType;
+            responseSync.deviceDetailsListener = deviceDetailsListener;
+            responseSync.Wait = new System.Threading.CountdownEvent(1);
+
+            wsClient.request.Add(reqID, responseSync);
+
+            if (this.listener != null) {
+                this.listener.doSend(cmdType, reqID, req);
+            }
+            wsClient.sendData(JsonConvert.SerializeObject(req));
+            return responseSync;
+        }
+        #endregion
+
+        #region SCAN DOCUMENT
+        public Response.ScanDocument.BaseScanDocumentResp scanDocument(string scanType, bool saveEnabled,
+                                                                       TimeSpan timeoutMilliSec, int timeOutInterVal) {
+            return (Response.ScanDocument.BaseScanDocumentResp)scanDocumentAsync(scanType, saveEnabled, null, timeOutInterVal).waitResponse(timeoutMilliSec);
+        }
+        private ResponseSync<object> scanDocumentAsync(string scanType, bool saveEnabled,
+                                                       ScanDocumentListenner scanDocumentListenner, int timeOutInterVal) {
+            string cmdType = Utils.ToDescription(CmdType.ScanDocument);
+            string reqID = Utils.getUUID();
+            ScanDocument scanDocument = new ScanDocument();
+            scanDocument.scanType = scanType;
+            scanDocument.saveEnabled = saveEnabled;
+
+            ISRequest<object> req = new ISRequest<object>();
+            req.cmdType = Utils.ToDescription(CmdType.ScanDocument);
+            req.requestID = reqID;
+            req.timeOutInterval = timeOutInterVal;
+            req.data = scanDocument;
+
+            LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
+
+            ResponseSync<object> responseSync = new ResponseSync<object>();
+            responseSync.cmdType = cmdType;
+            responseSync.scanDocumentListenner = scanDocumentListenner;
+            responseSync.Wait = new System.Threading.CountdownEvent(1);
 
             wsClient.request.Add(reqID, responseSync);
 

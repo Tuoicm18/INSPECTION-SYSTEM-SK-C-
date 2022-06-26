@@ -56,6 +56,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BaseScanDocument.cs" />
     <Compile Include="ISExtentions.cs" />
     <Compile Include="ISMessage.cs" />
     <Compile Include="ISPluginClient.cs" />
@@ -66,6 +67,7 @@
     <Compile Include="Models\ChallengeType.cs" />
     <Compile Include="Models\CmdType.cs" />
     <Compile Include="Models\NotifyAutoReadDocument.cs" />
+    <Compile Include="Models\ScanDocument.cs" />
     <Compile Include="Models\TransactionDataBiometricAuth.cs" />
     <Compile Include="Request\AuthorizationElement.cs" />
     <Compile Include="Request\NVP.cs" />
@@ -95,6 +97,8 @@
     <Compile Include="Models\MultipleSelected.cs" />
     <Compile Include="Models\OptionalDetails.cs" />
     <Compile Include="Models\SingleSelected.cs" />
+    <Compile Include="Response\ScanDocument\BaseScanDocumentResp.cs" />
+    <Compile Include="Response\ScanDocument\DataScanDocument.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="Util\AtomicBoolean.cs" />
     <Compile Include="Util\ISPluginException.cs" />

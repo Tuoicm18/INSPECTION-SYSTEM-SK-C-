@@ -14,10 +14,12 @@ namespace PluginICAOClientSDK {
         }
         private Exception error;
         public ISPluginClient.DeviceDetailsListener deviceDetailsListener;
+        public ISPluginClient.RefreshListenner refreshListenner;
         public ISPluginClient.DocumentDetailsListener documentDetailsListener;
         public ISPluginClient.BiometricAuthenticationListener biometricAuthenticationListener;
         public ISPluginClient.ConnectToDeviceListener connectToDeviceListener;
         public ISPluginClient.DisplayInformationListener displayInformationListener;
+        public ISPluginClient.ScanDocumentListenner scanDocumentListenner;
 
         public T waitResponse (TimeSpan timeout) {
             try {
