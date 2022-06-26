@@ -8,6 +8,7 @@ using PluginICAOClientSDK.Response.BiometricAuth;
 using PluginICAOClientSDK.Response.ConnectToDevice;
 using PluginICAOClientSDK.Response.DisplayInformation;
 using PluginICAOClientSDK.Response.CardDetectionEvent;
+using System.Collections.Generic;
 
 namespace PluginICAOClientSDK {
     public class ISPluginClient {
@@ -182,16 +183,20 @@ namespace PluginICAOClientSDK {
                                                           bool dataGroupEnabled, bool optionalDetailsEnabled,
                                                           TimeSpan timeoutMilliSec, DocumentDetailsListener documentDetailsListener,
                                                           int timeOutInterVal, string canValue,
-                                                          string challenge) {
+                                                          string challenge, bool caEnabled,
+                                                          bool taEnabled) {
 
             return (BaseDocumentDetailsResp)getDocumentDetailsAsync(mrzEnabled, imageEnabled, dataGroupEnabled,
                                                                     optionalDetailsEnabled, documentDetailsListener,
-                                                                    timeOutInterVal, canValue, challenge).waitResponse(timeoutMilliSec);
+                                                                    timeOutInterVal, canValue, 
+                                                                    challenge, caEnabled,
+                                                                    taEnabled).waitResponse(timeoutMilliSec);
         }
         private ResponseSync<object> getDocumentDetailsAsync(bool mrzEnabled, bool imageEnabled,
                                                              bool dataGroupEnabled, bool optionalDetailsEnabled,
                                                              DocumentDetailsListener documentDetailsListener, int timeOutInterVal,
-                                                             string canValue, string challenge) {
+                                                             string canValue, string challenge,
+                                                             bool caEnabled, bool taEnabled) {
             string cmdType = Utils.ToDescription(CmdType.GetInfoDetails);
             string reqID = Utils.getUUID();
             RequireInfoDetails requireInfoDetails = new RequireInfoDetails();
@@ -201,6 +206,8 @@ namespace PluginICAOClientSDK {
             requireInfoDetails.optionalDetailsEnabled = optionalDetailsEnabled;
             requireInfoDetails.canValue = canValue;
             requireInfoDetails.challenge = challenge;
+            requireInfoDetails.caEnabled = caEnabled;
+            requireInfoDetails.taEnabled = taEnabled;
 
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = cmdType;
@@ -240,23 +247,30 @@ namespace PluginICAOClientSDK {
         //     Return result biometric authentication.
         //
         // Exception: Unconnected exception occurs, some other exceptions.
-        public BaseBiometricAuthResp biometricAuthentication(string biometricType, AuthorizationData authorizationData,
+        public BaseBiometricAuthResp biometricAuthentication(string biometricType, object challengeBiometric,
                                                              TimeSpan timeoutSec, int timeOutInterVal,
-                                                             string challenge) {
-            return (BaseBiometricAuthResp)biometricAuthenticationAsync(biometricType, authorizationData, null, timeOutInterVal, challenge)
+                                                             string challengeType, bool livenessEnabled,
+                                                             string cardNo) {
+            return (BaseBiometricAuthResp)biometricAuthenticationAsync(biometricType, challengeBiometric, 
+                                                                       null, timeOutInterVal, 
+                                                                       challengeType, livenessEnabled,
+                                                                       cardNo)
                    .waitResponse(timeoutSec);
         }
 
-        private ResponseSync<object> biometricAuthenticationAsync(string biometricType, AuthorizationData authorizationData,
+        private ResponseSync<object> biometricAuthenticationAsync(string biometricType, object challengeBiometric,
                                                                   ISPluginClient.BiometricAuthenticationListener biometricAuthenticationListener,
-                                                                  int timeOut, string challenge) {
+                                                                  int timeOut, string challengeType,
+                                                                  bool livenessEnabled, string cardNo) {
             string cmdType = Utils.ToDescription(CmdType.BiometricAuthentication);
             string reqID = Utils.getUUID();
 
             RequireBiometricAuth requireBiometricAuth = new RequireBiometricAuth();
             requireBiometricAuth.biometricType = biometricType;
-            authorizationData.challenge = challenge;
-            requireBiometricAuth.authorizationData = authorizationData;
+            requireBiometricAuth.cardNo = cardNo;
+            requireBiometricAuth.challengeType = challengeType;
+            requireBiometricAuth.challenge = challengeBiometric;
+            requireBiometricAuth.livenessEnabled = livenessEnabled;
 
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = cmdType;

@@ -51,8 +51,8 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="websocket-sharp, Version=1.0.2.59611, Culture=neutral, PublicKeyToken=5660b08a1845a91e, processorArchitecture=MSIL">
-      <HintPath>..\..\Nuget\WebSocketSharp.1.0.3-rc11\lib\websocket-sharp.dll</HintPath>
+    <Reference Include="websocket-sharp-customheaders, Version=1.0.2.31869, Culture=neutral, PublicKeyToken=5660b08a1845a91e, processorArchitecture=MSIL">
+      <HintPath>..\..\Nuget\websocket-sharp-customheaders.1.0.2.31869\lib\net35\websocket-sharp-customheaders.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -62,8 +62,11 @@
     <Compile Include="ISRequest.cs" />
     <Compile Include="ISResponse.cs" />
     <Compile Include="Models\BiometricType.cs" />
+    <Compile Include="Models\ChallengeBiometricAuth.cs" />
+    <Compile Include="Models\ChallengeType.cs" />
     <Compile Include="Models\CmdType.cs" />
     <Compile Include="Models\NotifyAutoReadDocument.cs" />
+    <Compile Include="Models\TransactionDataBiometricAuth.cs" />
     <Compile Include="Request\AuthorizationElement.cs" />
     <Compile Include="Request\NVP.cs" />
     <Compile Include="Request\PrepareAuthData.cs" />
@@ -74,7 +77,6 @@
     <Compile Include="Models\RequireInfoDetails.cs" />
     <Compile Include="ResponseSync.cs" />
     <Compile Include="Request\AuthContent.cs" />
-    <Compile Include="Request\AuthorizationData.cs" />
     <Compile Include="Models\ConfigConnect.cs" />
     <Compile Include="Response\BiometricAuth\BaseBiometricAuthResp.cs" />
     <Compile Include="Response\BiometricAuth\DataBiometricAuth.cs" />

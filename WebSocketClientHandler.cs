@@ -9,11 +9,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using WebSocketSharp;
 using PluginICAOClientSDK.Response.BiometricAuth;
 using PluginICAOClientSDK.Response.ConnectToDevice;
 using PluginICAOClientSDK.Response.DisplayInformation;
 using PluginICAOClientSDK.Response.CardDetectionEvent;
+using WebSocketSharp;
 
 namespace PluginICAOClientSDK {
     public delegate void DelegateAutoDocument(BaseDocumentDetailsResp documentDetailsResp);
@@ -49,6 +49,7 @@ namespace PluginICAOClientSDK {
         }
 
         public BaseDocumentDetailsResp documentRespAuto { get; set; }
+
         #endregion
 
         #region CONSTRUCTOR
@@ -153,7 +154,6 @@ namespace PluginICAOClientSDK {
             try {
                 ws.OnMessage += (sender, e) => {
                     delegateAutoReadNofity(e.Data);
-
                     BaseDeviceDetailsResp baseDeviceDetailsResp = JsonConvert.DeserializeObject<BaseDeviceDetailsResp>(e.Data);
                     if (null != baseDeviceDetailsResp) {
                         checkConnectionDenied = baseDeviceDetailsResp.errorCode;

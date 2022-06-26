@@ -8,5 +8,7 @@ namespace PluginICAOClientSDK.Models {
         public bool optionalDetailsEnabled { get; set; }
         public string canValue { get; set; }
         public string challenge { get; set; }
+        public bool caEnabled { get; set; }
+        public bool taEnabled { get; set; }
     }
 }

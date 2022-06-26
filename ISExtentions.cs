@@ -1,5 +1,5 @@
 ﻿using Newtonsoft.Json;
-using PluginICAOClientSDK.Request;
+using PluginICAOClientSDK.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,13 +34,13 @@ namespace PluginICAOClientSDK {
         }
 
         //Deserialize Authorization Data To Json String For Request Authentication
-        public static AuthorizationData deserializeJsonAuthorizationData(string jsonAuthorizationData) {
+        public static TransactionDataBiometricAuth deserializeJsonAuthorizationData(string jsonAuthorizationData) {
             try {
                 if (jsonAuthorizationData.Equals(string.Empty)) {
                     return null;
                 }
                 else {
-                    AuthorizationData authorizationData = JsonConvert.DeserializeObject<AuthorizationData>(jsonAuthorizationData);
+                    TransactionDataBiometricAuth authorizationData = JsonConvert.DeserializeObject<TransactionDataBiometricAuth>(jsonAuthorizationData);
                     return authorizationData;
                 }
             } catch (Exception e) {

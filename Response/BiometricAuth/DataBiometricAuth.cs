@@ -24,6 +24,6 @@ namespace PluginICAOClientSDK.Response.BiometricAuth {
         public string issueDetailMessage { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public AuthorizationData authorizationData { get; set; }
+        public ChallengeBiometricAuth challenge { get; set; }
     }
 }
