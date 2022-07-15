@@ -38,13 +38,13 @@ namespace PluginICAOClientSDK {
         /// <param name="endPointUrl">End point URL Websocket Server</param>
         /// <param name="listener">Listenner for Client Webscoket DeviceDetails, DocumentDetais...etc</param>
         public ISPluginClient(string endPointUrl, bool secureConnect,
-                              DelegateAutoDocument delegateAutoGetDocument,DelegateAutoBiometricResult delegateBiometricResult,
+                              DelegateAutoDocument delegateAutoGetDocument, DelegateAutoBiometricResult delegateBiometricResult,
                               DelegateCardDetectionEvent delegateCardEvent, DelegateConnect delegateConnectSocket,
                               DelegateNotifyMessage delegateNotifyMessage,
                               ISListener listener = null) {
             wsClient = new WebSocketClientHandler(endPointUrl, secureConnect,
                                                   listener,
-                                                  delegateAutoGetDocument, delegateBiometricResult, 
+                                                  delegateAutoGetDocument, delegateBiometricResult,
                                                   delegateCardEvent, delegateConnectSocket,
                                                   delegateNotifyMessage);
             this.listener = listener;
@@ -60,7 +60,7 @@ namespace PluginICAOClientSDK {
             void onReceivedDeviceDetails(Response.DeviceDetails.BaseDeviceDetailsResp device);
         }
 
-        public interface RefreshListenner: DetailsListener {
+        public interface RefreshListenner : DetailsListener {
             void onReceivedRefres(Response.DeviceDetails.BaseDeviceDetailsResp deviceRefresh);
         }
 
@@ -194,7 +194,7 @@ namespace PluginICAOClientSDK {
 
             return (BaseDocumentDetailsResp)getDocumentDetailsAsync(mrzEnabled, imageEnabled, dataGroupEnabled,
                                                                     optionalDetailsEnabled, documentDetailsListener,
-                                                                    timeOutInterVal, canValue, 
+                                                                    timeOutInterVal, canValue,
                                                                     challenge, caEnabled,
                                                                     taEnabled).waitResponse(timeoutMilliSec);
         }
@@ -257,8 +257,8 @@ namespace PluginICAOClientSDK {
                                                              TimeSpan timeoutSec, int timeOutInterVal,
                                                              string challengeType, bool livenessEnabled,
                                                              string cardNo) {
-            return (BaseBiometricAuthResp)biometricAuthenticationAsync(biometricType, challengeBiometric, 
-                                                                       null, timeOutInterVal, 
+            return (BaseBiometricAuthResp)biometricAuthenticationAsync(biometricType, challengeBiometric,
+                                                                       null, timeOutInterVal,
                                                                        challengeType, livenessEnabled,
                                                                        cardNo)
                    .waitResponse(timeoutSec);
@@ -453,6 +453,14 @@ namespace PluginICAOClientSDK {
         #endregion
 
         #region FOR TEST
+        public void reConnectSocket(int interval, int totalOfTimes) {
+            try {
+                wsClient.reconnectSocket(interval, totalOfTimes);
+            }
+            catch (Exception ex) {
+                throw ex;
+            }
+        }
         #endregion
     }
 }

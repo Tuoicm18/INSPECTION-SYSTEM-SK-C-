@@ -63,6 +63,13 @@ namespace PluginICAOClientSDK {
         public bool IsConnect {
             get { return isConnect; }
         }
+
+        //Test Timer Connect Socket
+        private System.Timers.Timer timerConnect = new System.Timers.Timer();
+        private object locker = new object();
+        private System.Threading.ManualResetEvent timerDead = new System.Threading.ManualResetEvent(false);
+        private int countReConnect = 0;
+
         #endregion
 
         #region CONSTRUCTOR
@@ -121,6 +128,42 @@ namespace PluginICAOClientSDK {
             wsConnect();
             LOGGER.Debug("RE-CONNECT");
         }
+
+        public void reconnectSocket(int interval, int totalOfTimes) {
+            try {
+                timerDead.Reset();
+                timerConnect.Interval = interval;
+                timerConnect.Elapsed += Timer_Elapsed;
+                timerConnect.Start();
+
+                if (this.countReConnect == totalOfTimes) {
+                    StopTimer();
+                }
+            }
+            catch (Exception ex) {
+                LOGGER.Error(ex.ToString());
+                StopTimer();
+            }
+        }
+
+        private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e) {
+            lock (locker) {
+                if (timerDead.WaitOne(0)) return;
+                // etc...
+                countReConnect++;
+                wsConnect();
+            }
+        }
+
+        private void StopTimer() {
+            lock (locker) {
+                timerDead.Set();
+                timerConnect.Stop();
+                countReConnect = 0;
+                ws.Close();
+            }
+        }
+
         #endregion
 
         #region WEBSOCKET EVENTS
@@ -152,6 +195,9 @@ namespace PluginICAOClientSDK {
                         //ResetTimeoutTimer();
                         isConnect = true;
                         delegateConnect(true);
+                        timerDead.Set();
+                        this.countReConnect = 0;
+
                         LOGGER.Debug("CONNECT SUCCESSFULLY");
                         if (listener != null) {
                             listener.onConnected();
@@ -318,6 +364,7 @@ namespace PluginICAOClientSDK {
             try {
                 this.isShutdown = true;
                 this.ws.Close();
+                StopTimer();
                 LOGGER.Debug("SOCKET CLIENT SHUTDOWN");
                 //StopTimeoutTimer();
             }
