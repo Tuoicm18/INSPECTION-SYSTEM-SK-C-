@@ -80,6 +80,7 @@
     <Compile Include="ResponseSync.cs" />
     <Compile Include="Request\AuthContent.cs" />
     <Compile Include="Models\ConfigConnect.cs" />
+    <Compile Include="Response\BaseResponse.cs" />
     <Compile Include="Response\BiometricAuth\BaseBiometricAuthResp.cs" />
     <Compile Include="Response\BiometricAuth\DataBiometricAuth.cs" />
     <Compile Include="Models\DataGroup.cs" />

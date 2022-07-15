@@ -17,10 +17,15 @@ using WebSocketSharp;
 using PluginICAOClientSDK.Response.ScanDocument;
 
 namespace PluginICAOClientSDK {
+
+    #region DELEGATE
     public delegate void DelegateAutoDocument(BaseDocumentDetailsResp documentDetailsResp);
     public delegate void DelegateAutoBiometricResult(BaseBiometricAuthResp baseBiometricAuthResp);
-    public delegate void DelegateAutoReadNofity(string json);
     public delegate void DelegateCardDetectionEvent(BaseCardDetectionEventResp cardDetectionEventResp);
+    public delegate void DelegateConnect(bool isCoonect);
+    public delegate void DelegateNotifyMessage(string json);
+    #endregion
+
     public class WebSocketClientHandler {
 
         #region VARIABLE
@@ -36,38 +41,36 @@ namespace PluginICAOClientSDK {
         private const string FUNC_SCAN_DOCUMENT = "ScanDocument";
         #endregion
 
-        private StringBuilder response;
-        private readonly ISPluginClient.ISListener listener;
-        private static readonly double TIME_RECONNECT = 20;
-        private static readonly int MAX_PING = 15;
-
-        public readonly Dictionary<string, ResponseSync<object>> request = new Dictionary<string, ResponseSync<object>>();
+        #region DELEGATE 
         private DelegateAutoDocument delegateAuto;
         private DelegateAutoBiometricResult delegatebiometricResult;
-        private DelegateAutoReadNofity delegateAutoReadNofity;
         private DelegateCardDetectionEvent delegateCardEvent;
+        public DelegateConnect delegateConnect;
+        public DelegateNotifyMessage delegateNotifyMessage;
+        #endregion
+
+        private StringBuilder response;
+        private readonly ISPluginClient.ISListener listener;
+        private readonly int MAX_PING = 15;
+        private double timeIntervalReconnect = 10;
+        public readonly Dictionary<string, ResponseSync<object>> request = new Dictionary<string, ResponseSync<object>>();
 
         private Timer timeoutTimer;
         private readonly object timeoutTimerLock = new object();
         private WebSocket ws;
         private bool isShutdown { get; set; }
-        private bool isConnect = false;
+        private bool isConnect;
         public bool IsConnect {
             get { return isConnect; }
         }
-        private int checkConnectionDenied = 0;
-        public int CheckConnectionDenied {
-            get { return this.checkConnectionDenied; }
-        }
-
-        public BaseDocumentDetailsResp documentRespAuto { get; set; }
-
         #endregion
 
         #region CONSTRUCTOR
-        public WebSocketClientHandler(string endPointUrl, bool secureConnect, DelegateAutoDocument dlgAuto,
-                                      ISPluginClient.ISListener listener, DelegateAutoBiometricResult delegateAutoBiometric,
-                                      DelegateAutoReadNofity dlgAutoReadNofity, DelegateCardDetectionEvent dlgCardEvent) {
+        public WebSocketClientHandler(string endPointUrl, bool secureConnect,
+                                      ISPluginClient.ISListener listener,
+                                      DelegateAutoDocument dlgAutoGetDocument, DelegateAutoBiometricResult delegateAutoBiometric,
+                                      DelegateCardDetectionEvent dlgCardEvent, DelegateConnect delegateConnect,
+                                      DelegateNotifyMessage dlgNotifyMessage) {
 
             try {
                 ws = new WebSocket(endPointUrl);
@@ -75,10 +78,11 @@ namespace PluginICAOClientSDK {
                     ws.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
                 }
                 this.listener = listener;
-                this.delegateAuto = dlgAuto;
+                this.delegateAuto = dlgAutoGetDocument;
                 this.delegatebiometricResult = delegateAutoBiometric;
-                this.delegateAutoReadNofity = dlgAutoReadNofity;
                 this.delegateCardEvent = dlgCardEvent;
+                this.delegateConnect = delegateConnect;
+                this.delegateNotifyMessage = dlgNotifyMessage;
                 SetWebSocketSharpEvents();
             }
             catch (Exception e) {
@@ -88,24 +92,27 @@ namespace PluginICAOClientSDK {
         #endregion
 
         #region TIMER RE-CONECT
-        private void ResetTimeoutTimer() {
-            // if you are sure you will never access this from multiple threads at the same time - remove lock
-            lock (timeoutTimerLock) {
-                // initialize or reset the timer to fire once, after 10 seconds
-                if (timeoutTimer == null)
-                    timeoutTimer = new System.Threading.Timer(ReconnectAfterTimeout, null, TimeSpan.FromSeconds(TIME_RECONNECT), Timeout.InfiniteTimeSpan);
-                else
-                    timeoutTimer.Change(TimeSpan.FromSeconds(TIME_RECONNECT), Timeout.InfiniteTimeSpan);
-            }
-        }
+        //private void ResetTimeoutTimer() {
+        //    // if you are sure you will never access this from multiple threads at the same time - remove lock
+        //    lock (timeoutTimerLock) {
+        //        // initialize or reset the timer to fire once, after 10 seconds
+        //        if (timeoutTimer == null)
+        //            //timeoutTimer = new System.Threading.Timer(ReconnectAfterTimeout, null, TimeSpan.FromSeconds(this.timeIntervalReconnect), Timeout.InfiniteTimeSpan);
+        //            timeoutTimer = new Timer(ReconnectAfterTimeout, null, TimeSpan.FromSeconds(2), Timeout.InfiniteTimeSpan);
+        //        else {
+        //            timeoutTimer.Change(TimeSpan.FromSeconds(2), Timeout.InfiniteTimeSpan);
+        //        }
 
-        private void StopTimeoutTimer() {
-            // if you are sure you will never access this from multiple threads at the same time - remove lock
-            lock (timeoutTimerLock) {
-                if (timeoutTimer != null)
-                    timeoutTimer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
-            }
-        }
+        //    }
+        //}
+
+        //private void StopTimeoutTimer() {
+        //    // if you are sure you will never access this from multiple threads at the same time - remove lock
+        //    lock (timeoutTimerLock) {
+        //        if (timeoutTimer != null)
+        //            timeoutTimer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        //    }
+        //}
         #endregion
 
         #region RE-CONECT HANDLE
@@ -133,7 +140,7 @@ namespace PluginICAOClientSDK {
 
         #region CONNECT HANDLE
         public void wsConnect() {
-            ws.ConnectAsync();
+            ws.Connect();
         }
         #endregion
 
@@ -142,9 +149,10 @@ namespace PluginICAOClientSDK {
             try {
                 ws.OnOpen += (sender, e) => {
                     try {
-                        isConnect = true;
-                        LOGGER.Debug("CONNECT SUCCESSFULLY");
                         //ResetTimeoutTimer();
+                        isConnect = true;
+                        delegateConnect(true);
+                        LOGGER.Debug("CONNECT SUCCESSFULLY");
                         if (listener != null) {
                             listener.onConnected();
                         }
@@ -165,27 +173,25 @@ namespace PluginICAOClientSDK {
         private void wsOnMessageHandle() {
             try {
                 ws.OnMessage += (sender, e) => {
-                    delegateAutoReadNofity(e.Data);
-                    BaseDeviceDetailsResp baseDeviceDetailsResp = JsonConvert.DeserializeObject<BaseDeviceDetailsResp>(e.Data);
-                    if (null != baseDeviceDetailsResp) {
-                        checkConnectionDenied = baseDeviceDetailsResp.errorCode;
-                    }
-
+                    //ResetTimeoutTimer();
+                    this.delegateNotifyMessage(e.Data);
+                    ws.EmitOnPing = true;
                     if (!ws.Ping()) {
                         //!ws.Ping()
                         //Try Ping RE-CONNECT
                         this.isConnect = false;
+                        //delegateConnect(false);
 
-                        ws.EmitOnPing = true;
                         int countPong = 0;
                         int countPing = 0;
                         System.Timers.Timer timerPingPong = new System.Timers.Timer();
-                        timerPingPong.Interval = 5000;
+                        timerPingPong.Interval = this.timeIntervalReconnect * 1000;
                         timerPingPong.Elapsed += (senderPingPong, ePingPong) => {
                             countPing++;
                             LOGGER.Debug("PING");
                             if (ws.Ping()) {
                                 isConnect = true;
+                                //delegateConnect(true);
 
                                 countPong++;
                                 LOGGER.Debug("PONG++");
@@ -196,24 +202,28 @@ namespace PluginICAOClientSDK {
                             }
                             if (countPing == MAX_PING) {
                                 isConnect = true;
-                                LOGGER.Debug("PING = 10");
+                                //delegateConnect(true);
+
+                                LOGGER.Debug("PING = MAX PING");
                                 timerPingPong.Stop();
                                 if (countPong < MAX_PING) {
                                     isConnect = false;
+                                    //delegateConnect(false);
 
                                     LOGGER.Debug("PONG < PING");
+                                    ws.Close();
                                     this.isShutdown = true;
-                                    ws.CloseAsync();
                                 }
                                 else {
                                     isConnect = true;
+                                    //delegateConnect(true);
+
                                     LOGGER.Debug("PONG == PING");
                                     if (e.IsText) {
                                         if (!e.Data.Equals(string.Empty)) {
                                             response = new StringBuilder();
                                             response.Append(e.Data);
                                             processResponse(response.ToString());
-                                            delegateAutoReadNofity(response.ToString());
                                             //LOGGER.Debug("DATA RECIVED [TRY-PING-PONG] " + response.ToString());
                                         }
                                         else {
@@ -227,13 +237,13 @@ namespace PluginICAOClientSDK {
                     }
                     else {
                         isConnect = true;
+                        //delegateConnect(true);
 
                         if (e.IsText) {
                             if (!e.Data.Equals(string.Empty)) {
                                 response = new StringBuilder();
                                 response.Append(e.Data);
                                 processResponse(response.ToString());
-                                delegateAutoReadNofity(response.ToString());
                                 LOGGER.Debug("DATA RECIVED [DEFAULT] " + response.ToString());
                             }
                             else {
@@ -254,16 +264,17 @@ namespace PluginICAOClientSDK {
             try {
                 ws.OnError += (sender, e) => {
                     // stop it here
-                    StopTimeoutTimer();
+                    //StopTimeoutTimer();
                     LOGGER.Debug("SOCKET CLIENT ERROR MESSAGE " + e.Message);
                     //An exception has occurred during an OnMessage event. An error has occurred in closing the connection.
                     if (!ws.IsAlive) {
-                        //this.isShutdown = true;
+                        this.isShutdown = true;
                         ws.Close();
                     }
                     else {
+                        ws.EmitOnPing = true;
                         if (ws.Ping()) {
-                            ResetTimeoutTimer();
+                            //ResetTimeoutTimer();
                         }
                     }
                 };
@@ -279,11 +290,13 @@ namespace PluginICAOClientSDK {
             ws.OnClose += (sender, e) => {
                 // and here
                 this.isConnect = false;
+                delegateConnect(false);
+
                 if (this.isShutdown) {
-                    StopTimeoutTimer();
+                    //StopTimeoutTimer();
                 }
                 else {
-                    ResetTimeoutTimer();
+                    //ResetTimeoutTimer();
                 }
             };
         }
@@ -291,7 +304,12 @@ namespace PluginICAOClientSDK {
 
         #region SEND DATA
         public void sendData(string json) {
-            ws.Send(json);
+            try {
+                ws.Send(json);
+            }
+            catch (Exception ex) {
+                LOGGER.Debug(ex.ToString());
+            }
         }
         #endregion
 
@@ -299,11 +317,12 @@ namespace PluginICAOClientSDK {
         public void shutdown() {
             try {
                 this.isShutdown = true;
-                this.ws.CloseAsync();
+                this.ws.Close();
                 LOGGER.Debug("SOCKET CLIENT SHUTDOWN");
+                //StopTimeoutTimer();
             }
             catch (Exception e) {
-                StopTimeoutTimer();
+                //StopTimeoutTimer();
                 LOGGER.Debug("SOCKET CLIENT SHUTDOWN ERROR " + e.ToString());
             }
         }
@@ -336,7 +355,6 @@ namespace PluginICAOClientSDK {
                             throw new ISPluginException(resp.errorCode, resp.errorMessage);
                         }
 
-
                         string cmd = resp.cmdType;
                         switch (cmd) {
                             case FUNC_GET_DEVICE_DETAILS:
@@ -346,11 +364,12 @@ namespace PluginICAOClientSDK {
                                 if (sync.deviceDetailsListener != null) {
                                     sync.deviceDetailsListener.onReceivedDeviceDetails(respDeviceDetails);
                                 }
-                                if(sync.refreshListenner != null) {
+                                if (sync.refreshListenner != null) {
                                     sync.refreshListenner.onReceivedRefres(respDeviceDetails);
                                 }
                                 break;
                             case "SendInfoDetails":
+                                break;
                             case FUNC_GET_INFO_DETAILS:
                                 //BaseDocumentDetailsResp baseDocumentDetailsResp = JsonConvert.DeserializeObject<BaseDocumentDetailsResp>(json);
                                 BaseDocumentDetailsResp baseDocumentDetailsResp = getDocumentDetails(json);
@@ -383,7 +402,7 @@ namespace PluginICAOClientSDK {
                             case FUNC_SCAN_DOCUMENT:
                                 BaseScanDocumentResp scanDocumentResp = scanDocument(json);
                                 sync.setSuccess(scanDocumentResp);
-                                if(sync.scanDocumentListenner != null) {
+                                if (sync.scanDocumentListenner != null) {
                                     sync.scanDocumentListenner.onReceviedScanDocument(scanDocumentResp);
                                 }
                                 break;
@@ -423,10 +442,11 @@ namespace PluginICAOClientSDK {
                     }
                 }
                 else if (Utils.ToDescription(CmdType.CardDetectionEvent).Equals(resp.cmdType)) {
-                    if(this.listener != null) {
+                    if (this.listener != null) {
                         BaseCardDetectionEventResp baseCardDetectionEventResp = cardDetectionEvent(json);
                         listener.onReceviedCardDetectionEvent(baseCardDetectionEventResp);
-                    } else {
+                    }
+                    else {
                         BaseCardDetectionEventResp baseCardDetectionEventResp = cardDetectionEvent(json);
                         delegateCardEvent(baseCardDetectionEventResp);
                     }

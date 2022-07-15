@@ -19,10 +19,16 @@ namespace PluginICAOClientSDK {
 
         private WebSocketClientHandler wsClient;
         private ISListener listener;
-        public DelegateAutoDocument delegateAuto;
+        public double timeIntervalReconnect;
+
+        #region DELEGATE 
+        public DelegateAutoDocument delegateAutoGetDocument;
         public DelegateAutoBiometricResult delegateBiometricResult;
-        public DelegateAutoReadNofity delegateAutoReadNofity;
         public DelegateCardDetectionEvent delegateCardEvent;
+        public DelegateConnect delegateConnectSocket;
+        public DelegateNotifyMessage delegateNotifyMessage;
+        #endregion
+
         #endregion
 
         #region CONSTRUCTOR
@@ -32,20 +38,17 @@ namespace PluginICAOClientSDK {
         /// <param name="endPointUrl">End point URL Websocket Server</param>
         /// <param name="listener">Listenner for Client Webscoket DeviceDetails, DocumentDetais...etc</param>
         public ISPluginClient(string endPointUrl, bool secureConnect,
-                              DelegateAutoDocument delegateAuto, ISListener listener,
-                              DelegateAutoBiometricResult delegateBiometricResult, DelegateAutoReadNofity delegateAutoReadNofity,
-                              DelegateCardDetectionEvent delegateCardEvent) {
+                              DelegateAutoDocument delegateAutoGetDocument,DelegateAutoBiometricResult delegateBiometricResult,
+                              DelegateCardDetectionEvent delegateCardEvent, DelegateConnect delegateConnectSocket,
+                              DelegateNotifyMessage delegateNotifyMessage,
+                              ISListener listener = null) {
             wsClient = new WebSocketClientHandler(endPointUrl, secureConnect,
-                                                  delegateAuto, listener,
-                                                  delegateBiometricResult, delegateAutoReadNofity,
-                                                  delegateCardEvent);
+                                                  listener,
+                                                  delegateAutoGetDocument, delegateBiometricResult, 
+                                                  delegateCardEvent, delegateConnectSocket,
+                                                  delegateNotifyMessage);
+            this.listener = listener;
         }
-
-        public ISPluginClient() { }
-        #endregion
-
-        #region Test
-
         #endregion
 
         #region INTERFACE INNER 
@@ -119,20 +122,14 @@ namespace PluginICAOClientSDK {
         }
         #endregion
 
-        #region CHECK CONNECT FUNC
-        public bool checkConnect() {
-            //return wsClient.IsConnect;
-            return wsClient.IsConnect;
-        }
+        #region CONNECT FUNC
+        //public bool checkConnect() {
+        //    //return wsClient.IsConnect;
+        //    return wsClient.IsConnect;
+        //}
 
         public void connectSocketServer() {
             wsClient.wsConnect();
-        }
-        #endregion
-
-        #region CHECK CONNECTION DENIED
-        public int codeConnectionDenied() {
-            return wsClient.CheckConnectionDenied;
         }
         #endregion
 
@@ -453,6 +450,9 @@ namespace PluginICAOClientSDK {
             wsClient.sendData(JsonConvert.SerializeObject(req));
             return responseSync;
         }
+        #endregion
+
+        #region FOR TEST
         #endregion
     }
 }

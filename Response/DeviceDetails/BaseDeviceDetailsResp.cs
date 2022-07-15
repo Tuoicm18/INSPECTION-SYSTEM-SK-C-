@@ -3,14 +3,7 @@ using System;
 using System.Collections.Generic;
 
 namespace PluginICAOClientSDK.Response.DeviceDetails {
-    public class BaseDeviceDetailsResp {
-        public string cmdType { get; set; }
-        public string requestID { get; set; }
-        public int timeOutInterval { get; set; }
-
-        public int errorCode { get; set; }
-        public string errorMessage {get; set;}
-
+    public class BaseDeviceDetailsResp : BaseResponse {
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public DataDeviceDetails data { get; set; }
     }
