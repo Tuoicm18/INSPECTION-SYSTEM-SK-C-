@@ -13,13 +13,13 @@ namespace PluginICAOClientSDK {
             set { wait = value; }
         }
         private Exception error;
-        public ISPluginClient.DeviceDetailsListener deviceDetailsListener;
-        public ISPluginClient.RefreshListenner refreshListenner;
-        public ISPluginClient.DocumentDetailsListener documentDetailsListener;
-        public ISPluginClient.BiometricAuthenticationListener biometricAuthenticationListener;
-        public ISPluginClient.ConnectToDeviceListener connectToDeviceListener;
-        public ISPluginClient.DisplayInformationListener displayInformationListener;
-        public ISPluginClient.ScanDocumentListenner scanDocumentListenner;
+        public ISPluginClient.DeviceDetailsListener deviceDetailsListener { get; set; }
+        public ISPluginClient.RefreshListenner refreshListenner { get; set; }
+        public ISPluginClient.DocumentDetailsListener documentDetailsListener { get; set; }
+        public ISPluginClient.BiometricAuthenticationListener biometricAuthenticationListener { get; set; }
+        public ISPluginClient.ConnectToDeviceListener connectToDeviceListener { get; set; }
+        public ISPluginClient.DisplayInformationListener displayInformationListener { get; set; }
+        public ISPluginClient.ScanDocumentListenner scanDocumentListenner { get; set; }
 
         public T waitResponse (TimeSpan timeout) {
             try {

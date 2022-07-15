@@ -37,17 +37,18 @@ namespace PluginICAOClientSDK {
         /// </summary>
         /// <param name="endPointUrl">End point URL Websocket Server</param>
         /// <param name="listener">Listenner for Client Webscoket DeviceDetails, DocumentDetais...etc</param>
-        public ISPluginClient(string endPointUrl, bool secureConnect,
-                              DelegateAutoDocument delegateAutoGetDocument, DelegateAutoBiometricResult delegateBiometricResult,
-                              DelegateCardDetectionEvent delegateCardEvent, DelegateConnect delegateConnectSocket,
-                              DelegateNotifyMessage delegateNotifyMessage,
-                              ISListener listener = null) {
-            wsClient = new WebSocketClientHandler(endPointUrl, secureConnect,
-                                                  listener,
-                                                  delegateAutoGetDocument, delegateBiometricResult,
-                                                  delegateCardEvent, delegateConnectSocket,
-                                                  delegateNotifyMessage);
-            this.listener = listener;
+        public ISPluginClient(string ip, int port,
+                              bool secureConnect, DelegateAutoDocument delegateAutoGetDocument,
+                              DelegateAutoBiometricResult delegateBiometricResult, DelegateCardDetectionEvent delegateCardEvent,
+                              DelegateConnect delegateConnectSocket, DelegateNotifyMessage delegateNotifyMessage) {
+            wsClient = new WebSocketClientHandler(ip, port,
+                                                  secureConnect, delegateAutoGetDocument,
+                                                  delegateBiometricResult, delegateCardEvent,
+                                                  delegateConnectSocket, delegateNotifyMessage);
+        }
+
+        public ISPluginClient(string ip, int port, bool secureConnect, ISListener listener) {
+            wsClient = new WebSocketClientHandler(ip, port, secureConnect, listener);
         }
         #endregion
 
@@ -57,31 +58,31 @@ namespace PluginICAOClientSDK {
         }
 
         public interface DeviceDetailsListener : DetailsListener {
-            void onReceivedDeviceDetails(Response.DeviceDetails.BaseDeviceDetailsResp device);
+            void onDeviceDetails(Response.DeviceDetails.BaseDeviceDetailsResp device);
         }
 
         public interface RefreshListenner : DetailsListener {
-            void onReceivedRefres(Response.DeviceDetails.BaseDeviceDetailsResp deviceRefresh);
+            void onRefresh(Response.DeviceDetails.BaseDeviceDetailsResp deviceRefresh);
         }
 
         public interface DocumentDetailsListener : DetailsListener {
-            void onReceivedDocumentDetails(BaseDocumentDetailsResp document);
+            void onDocumentDetails(BaseDocumentDetailsResp document);
         }
 
         public interface BiometricAuthenticationListener : DetailsListener {
-            void onReceviedBiometricAuthenticaton(BaseBiometricAuthResp biometricAuthenticationResp);
+            void onBiometricAuthenticaton(BaseBiometricAuthResp biometricAuthenticationResp);
         }
 
         public interface ConnectToDeviceListener : DetailsListener {
-            void onReceviedConnectToDevice(BaseConnectToDeviceResp connectToDeviceResp);
+            void onConnectToDevice(BaseConnectToDeviceResp connectToDeviceResp);
         }
 
         public interface DisplayInformationListener : DetailsListener {
-            void onReceviedDisplayInformation(BaseDisplayInformation baseDisplayInformation);
+            void onDisplayInformation(BaseDisplayInformation baseDisplayInformation);
         }
 
         public interface ScanDocumentListenner : DetailsListener {
-            void onReceviedScanDocument(BaseScanDocumentResp baseScanDocumentResp);
+            void onScanDocument(BaseScanDocumentResp baseScanDocumentResp);
         }
 
         public interface ISListener {
@@ -146,7 +147,7 @@ namespace PluginICAOClientSDK {
             return (Response.DeviceDetails.BaseDeviceDetailsResp)getDeviceDetailsAsync(deviceDetailsEnabled, presenceEnabled, null, timeOutInterVal).waitResponse(timeoutMilliSec);
         }
 
-        private ResponseSync<object> getDeviceDetailsAsync(bool deviceDetailsEnabled, bool presenceEnabled, DeviceDetailsListener deviceDetailsListener, int timeOutInterVal) {
+        public ResponseSync<object> getDeviceDetailsAsync(bool deviceDetailsEnabled, bool presenceEnabled, DeviceDetailsListener deviceDetailsListener, int timeOutInterVal) {
             string cmdType = Utils.ToDescription(CmdType.GetDeviceDetails);
             string reqID = Utils.getUUID();
             RequireDeviceDetails requireDeviceDetails = new RequireDeviceDetails();
@@ -198,7 +199,7 @@ namespace PluginICAOClientSDK {
                                                                     challenge, caEnabled,
                                                                     taEnabled).waitResponse(timeoutMilliSec);
         }
-        private ResponseSync<object> getDocumentDetailsAsync(bool mrzEnabled, bool imageEnabled,
+        public ResponseSync<object> getDocumentDetailsAsync(bool mrzEnabled, bool imageEnabled,
                                                              bool dataGroupEnabled, bool optionalDetailsEnabled,
                                                              DocumentDetailsListener documentDetailsListener, int timeOutInterVal,
                                                              string canValue, string challenge,
@@ -264,7 +265,7 @@ namespace PluginICAOClientSDK {
                    .waitResponse(timeoutSec);
         }
 
-        private ResponseSync<object> biometricAuthenticationAsync(string biometricType, object challengeBiometric,
+        public ResponseSync<object> biometricAuthenticationAsync(string biometricType, object challengeBiometric,
                                                                   ISPluginClient.BiometricAuthenticationListener biometricAuthenticationListener,
                                                                   int timeOut, string challengeType,
                                                                   bool livenessEnabled, string cardNo) {
@@ -307,7 +308,7 @@ namespace PluginICAOClientSDK {
                                                    TimeSpan timeoutMilliSec, int timeOutInterVal) {
             return (BaseConnectToDeviceResp)connectToDeviceSync(confirmEnabled, confirmCode, clientName, configConnect, null, timeOutInterVal).waitResponse(timeoutMilliSec);
         }
-        private ResponseSync<object> connectToDeviceSync(bool confirmEnabled, string confirmCode,
+        public ResponseSync<object> connectToDeviceSync(bool confirmEnabled, string confirmCode,
                                                          string clientName, ConfigConnect configConnect,
                                                          ConnectToDeviceListener connectToDeviceListener,
                                                          int timeOutInterVal) {
@@ -348,7 +349,7 @@ namespace PluginICAOClientSDK {
                                                          TimeSpan timeoutMilliSec, int timeOutInterVal) {
             return (BaseDisplayInformation)displayInformationSync(title, type, value, null, timeOutInterVal).waitResponse(timeoutMilliSec);
         }
-        private ResponseSync<object> displayInformationSync(string title, string type, string value,
+        public ResponseSync<object> displayInformationSync(string title, string type, string value,
                                                             DisplayInformationListener displayInformationListener, int timeOutInterVal) {
             string cmdType = Utils.ToDescription(CmdType.DisplayInformation);
             string reqID = Utils.getUUID();
@@ -386,7 +387,7 @@ namespace PluginICAOClientSDK {
             return (Response.DeviceDetails.BaseDeviceDetailsResp)refreshAsync(deviceDetailsEnabled, presenceEnabled, null, timeOutInterVal).waitResponse(timeoutMilliSec);
         }
 
-        private ResponseSync<object> refreshAsync(bool deviceDetailsEnabled, bool presenceEnabled, DeviceDetailsListener deviceDetailsListener, int timeOutInterVal) {
+        public ResponseSync<object> refreshAsync(bool deviceDetailsEnabled, bool presenceEnabled, DeviceDetailsListener deviceDetailsListener, int timeOutInterVal) {
             string cmdType = Utils.ToDescription(CmdType.Refresh);
             string reqID = Utils.getUUID();
             RequireDeviceDetails requireDeviceDetails = new RequireDeviceDetails();
@@ -419,9 +420,9 @@ namespace PluginICAOClientSDK {
         #region SCAN DOCUMENT
         public Response.ScanDocument.BaseScanDocumentResp scanDocument(string scanType, bool saveEnabled,
                                                                        TimeSpan timeoutMilliSec, int timeOutInterVal) {
-            return (Response.ScanDocument.BaseScanDocumentResp)scanDocumentAsync(scanType, saveEnabled, null, timeOutInterVal).waitResponse(timeoutMilliSec);
+            return (BaseScanDocumentResp)scanDocumentAsync(scanType, saveEnabled, null, timeOutInterVal).waitResponse(timeoutMilliSec);
         }
-        private ResponseSync<object> scanDocumentAsync(string scanType, bool saveEnabled,
+        public ResponseSync<object> scanDocumentAsync(string scanType, bool saveEnabled,
                                                        ScanDocumentListenner scanDocumentListenner, int timeOutInterVal) {
             string cmdType = Utils.ToDescription(CmdType.ScanDocument);
             string reqID = Utils.getUUID();

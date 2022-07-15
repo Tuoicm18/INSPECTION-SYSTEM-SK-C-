@@ -73,23 +73,45 @@ namespace PluginICAOClientSDK {
         #endregion
 
         #region CONSTRUCTOR
-        public WebSocketClientHandler(string endPointUrl, bool secureConnect,
-                                      ISPluginClient.ISListener listener,
-                                      DelegateAutoDocument dlgAutoGetDocument, DelegateAutoBiometricResult delegateAutoBiometric,
-                                      DelegateCardDetectionEvent dlgCardEvent, DelegateConnect delegateConnect,
-                                      DelegateNotifyMessage dlgNotifyMessage) {
+        public WebSocketClientHandler(string ip, int port,
+                                      bool secureConnect, DelegateAutoDocument dlgAutoGetDocument,
+                                      DelegateAutoBiometricResult delegateAutoBiometric, DelegateCardDetectionEvent dlgCardEvent,
+                                      DelegateConnect delegateConnect, DelegateNotifyMessage dlgNotifyMessage) {
 
             try {
-                ws = new WebSocket(endPointUrl);
                 if (secureConnect) {
+                    string endPointUrlWSS = "wss://" + ip + ":" + port + "/ISPlugin";
+                    ws = new WebSocket(endPointUrlWSS);
                     ws.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
                 }
-                this.listener = listener;
+                else {
+                    string endPointUrlWS = "ws://" + ip + ":" + port + "/ISPlugin";
+                    ws = new WebSocket(endPointUrlWS);
+                }
                 this.delegateAuto = dlgAutoGetDocument;
                 this.delegatebiometricResult = delegateAutoBiometric;
                 this.delegateCardEvent = dlgCardEvent;
                 this.delegateConnect = delegateConnect;
                 this.delegateNotifyMessage = dlgNotifyMessage;
+                SetWebSocketSharpEvents();
+            }
+            catch (Exception e) {
+                throw e;
+            }
+        }
+
+        public WebSocketClientHandler(string ip, int port, bool secureConnect, ISPluginClient.ISListener listener) {
+            try {
+                if (secureConnect) {
+                    string endPointUrlWSS = "wss://" + ip + ":" + port + "/ISPlugin";
+                    ws = new WebSocket(endPointUrlWSS);
+                    ws.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
+                }
+                else {
+                    string endPointUrlWS = "ws://" + ip + ":" + port + "/ISPlugin";
+                    ws = new WebSocket(endPointUrlWS);
+                }
+                this.listener = listener;
                 SetWebSocketSharpEvents();
             }
             catch (Exception e) {
@@ -194,7 +216,9 @@ namespace PluginICAOClientSDK {
                     try {
                         //ResetTimeoutTimer();
                         isConnect = true;
-                        delegateConnect(true);
+                        if(null != this.delegateConnect) {
+                            delegateConnect(true);
+                        }
                         timerDead.Set();
                         this.countReConnect = 0;
 
@@ -220,7 +244,9 @@ namespace PluginICAOClientSDK {
             try {
                 ws.OnMessage += (sender, e) => {
                     //ResetTimeoutTimer();
-                    this.delegateNotifyMessage(e.Data);
+                    if(null != this.delegateNotifyMessage) {
+                        this.delegateNotifyMessage(e.Data);
+                    }
                     ws.EmitOnPing = true;
                     if (!ws.Ping()) {
                         //!ws.Ping()
@@ -336,7 +362,13 @@ namespace PluginICAOClientSDK {
             ws.OnClose += (sender, e) => {
                 // and here
                 this.isConnect = false;
-                delegateConnect(false);
+                if(null != this.delegateConnect) {
+                    delegateConnect(false);
+                }
+
+                if (listener != null) {
+                    listener.onDisconnected();
+                }
 
                 if (this.isShutdown) {
                     //StopTimeoutTimer();
@@ -404,53 +436,53 @@ namespace PluginICAOClientSDK {
 
                         string cmd = resp.cmdType;
                         switch (cmd) {
-                            case FUNC_GET_DEVICE_DETAILS:
-                            case FUNC_REFRESH:
+                            case FUNC_GET_DEVICE_DETAILS: //Func 2.1
+                            case FUNC_REFRESH: //Func 2.9
                                 BaseDeviceDetailsResp respDeviceDetails = JsonConvert.DeserializeObject<BaseDeviceDetailsResp>(json);
                                 sync.setSuccess(respDeviceDetails);
                                 if (sync.deviceDetailsListener != null) {
-                                    sync.deviceDetailsListener.onReceivedDeviceDetails(respDeviceDetails);
+                                    sync.deviceDetailsListener.onDeviceDetails(respDeviceDetails);
                                 }
                                 if (sync.refreshListenner != null) {
-                                    sync.refreshListenner.onReceivedRefres(respDeviceDetails);
+                                    sync.refreshListenner.onRefresh(respDeviceDetails);
                                 }
                                 break;
                             case "SendInfoDetails":
                                 break;
-                            case FUNC_GET_INFO_DETAILS:
+                            case FUNC_GET_INFO_DETAILS: //Func 2.2
                                 //BaseDocumentDetailsResp baseDocumentDetailsResp = JsonConvert.DeserializeObject<BaseDocumentDetailsResp>(json);
                                 BaseDocumentDetailsResp baseDocumentDetailsResp = getDocumentDetails(json);
                                 sync.setSuccess(baseDocumentDetailsResp);
                                 if (sync.documentDetailsListener != null) {
-                                    sync.documentDetailsListener.onReceivedDocumentDetails(baseDocumentDetailsResp);
+                                    sync.documentDetailsListener.onDocumentDetails(baseDocumentDetailsResp);
                                 }
                                 break;
-                            case FUNC_BIOMETRIC_AUTH:
+                            case FUNC_BIOMETRIC_AUTH: //Func 2.4
                                 BaseBiometricAuthResp biometricAuthenticationResp = biometricAuthentication(json);
                                 sync.setSuccess(biometricAuthenticationResp);
                                 if (sync.biometricAuthenticationListener != null) {
-                                    sync.biometricAuthenticationListener.onReceviedBiometricAuthenticaton(biometricAuthenticationResp);
+                                    sync.biometricAuthenticationListener.onBiometricAuthenticaton(biometricAuthenticationResp);
                                 }
                                 break;
-                            case FUNC_CONNECT_DEVICE:
+                            case FUNC_CONNECT_DEVICE: //Func 2.5
                                 BaseConnectToDeviceResp connectToDeviceResp = connectToDevice(json);
                                 sync.setSuccess(connectToDeviceResp);
                                 if (sync.connectToDeviceListener != null) {
-                                    sync.connectToDeviceListener.onReceviedConnectToDevice(connectToDeviceResp);
+                                    sync.connectToDeviceListener.onConnectToDevice(connectToDeviceResp);
                                 }
                                 break;
-                            case FUNC_DISPLAY_INFO:
+                            case FUNC_DISPLAY_INFO: //Func 2.6
                                 BaseDisplayInformation displayInfor = displayInformation(json);
                                 sync.setSuccess(displayInfor);
                                 if (sync.displayInformationListener != null) {
-                                    sync.displayInformationListener.onReceviedDisplayInformation(displayInfor);
+                                    sync.displayInformationListener.onDisplayInformation(displayInfor);
                                 }
                                 break;
-                            case FUNC_SCAN_DOCUMENT:
+                            case FUNC_SCAN_DOCUMENT: //Func 2.10
                                 BaseScanDocumentResp scanDocumentResp = scanDocument(json);
                                 sync.setSuccess(scanDocumentResp);
                                 if (sync.scanDocumentListenner != null) {
-                                    sync.scanDocumentListenner.onReceviedScanDocument(scanDocumentResp);
+                                    sync.scanDocumentListenner.onScanDocument(scanDocumentResp);
                                 }
                                 break;
                         }
@@ -463,39 +495,57 @@ namespace PluginICAOClientSDK {
                         if (sync.deviceDetailsListener != null) {
                             sync.deviceDetailsListener.onError(ex);
                         }
+                        if (sync.biometricAuthenticationListener != null) {
+                            sync.deviceDetailsListener.onError(ex);
+                        }
+                        if (sync.displayInformationListener != null) {
+                            sync.displayInformationListener.onError(ex);
+                        }
+                        if (sync.connectToDeviceListener != null) {
+                            sync.connectToDeviceListener.onError(ex);
+                        }
+                        if (sync.scanDocumentListenner != null) {
+                            sync.scanDocumentListenner.onError(ex);
+                        }
                     } finally {
                         request.Remove(reqID);
                     }
                 }
-                else if (Utils.ToDescription(CmdType.SendInfoDetails).Equals(resp.cmdType)) {
+                else if (Utils.ToDescription(CmdType.SendInfoDetails).Equals(resp.cmdType)) { //Func 2.3
                     if (this.listener != null) {
                         BaseDocumentDetailsResp documentDetails = getDocumentDetails(json);
                         listener.onReceivedDocument(documentDetails);
                     }
                     else {
                         BaseDocumentDetailsResp documentDetails = getDocumentDetails(json);
-                        delegateAuto(documentDetails);
+                        if (null != delegateAuto) {
+                            delegateAuto(documentDetails);
+                        }
                         //documentRespAuto = documentDetails;
                     }
                 }
-                else if (Utils.ToDescription(CmdType.SendBiometricAuthentication).Equals(resp.cmdType)) {
+                else if (Utils.ToDescription(CmdType.SendBiometricAuthentication).Equals(resp.cmdType)) { //Func 2.7
                     if (this.listener != null) {
                         BaseBiometricAuthResp baseBiometricAuthResp = biometricAuthentication(json);
                         listener.onReceivedBiometricResult(baseBiometricAuthResp);
                     }
                     else {
                         BaseBiometricAuthResp baseBiometricAuthResp = biometricAuthentication(json);
-                        delegatebiometricResult(baseBiometricAuthResp);
+                        if (null != this.delegatebiometricResult) {
+                            delegatebiometricResult(baseBiometricAuthResp);
+                        }
                     }
                 }
-                else if (Utils.ToDescription(CmdType.CardDetectionEvent).Equals(resp.cmdType)) {
+                else if (Utils.ToDescription(CmdType.CardDetectionEvent).Equals(resp.cmdType)) { //Func 2.8
                     if (this.listener != null) {
                         BaseCardDetectionEventResp baseCardDetectionEventResp = cardDetectionEvent(json);
                         listener.onReceviedCardDetectionEvent(baseCardDetectionEventResp);
                     }
                     else {
                         BaseCardDetectionEventResp baseCardDetectionEventResp = cardDetectionEvent(json);
-                        delegateCardEvent(baseCardDetectionEventResp);
+                        if(null != this.delegateCardEvent) {
+                            delegateCardEvent(baseCardDetectionEventResp);
+                        }
                     }
                 }
                 else {
