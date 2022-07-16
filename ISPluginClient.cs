@@ -58,36 +58,36 @@ namespace PluginICAOClientSDK {
         }
 
         public interface DeviceDetailsListener : DetailsListener {
-            void onDeviceDetails(Response.DeviceDetails.BaseDeviceDetailsResp device);
+            void onDeviceDetails(Response.DeviceDetails.DeviceDetailsResp device);
         }
 
         public interface RefreshListenner : DetailsListener {
-            void onRefresh(Response.DeviceDetails.BaseDeviceDetailsResp deviceRefresh);
+            void onRefresh(Response.DeviceDetails.DeviceDetailsResp deviceRefresh);
         }
 
         public interface DocumentDetailsListener : DetailsListener {
-            void onDocumentDetails(BaseDocumentDetailsResp document);
+            void onDocumentDetails(DocumentDetailsResp document);
         }
 
         public interface BiometricAuthenticationListener : DetailsListener {
-            void onBiometricAuthenticaton(BaseBiometricAuthResp biometricAuthenticationResp);
+            void onBiometricAuthenticaton(BiometricAuthResp biometricAuthenticationResp);
         }
 
         public interface ConnectToDeviceListener : DetailsListener {
-            void onConnectToDevice(BaseConnectToDeviceResp connectToDeviceResp);
+            void onConnectToDevice(ConnectToDeviceResp connectToDeviceResp);
         }
 
         public interface DisplayInformationListener : DetailsListener {
-            void onDisplayInformation(BaseDisplayInformation baseDisplayInformation);
+            void onDisplayInformation(DisplayInformationResp baseDisplayInformation);
         }
 
         public interface ScanDocumentListenner : DetailsListener {
-            void onScanDocument(BaseScanDocumentResp baseScanDocumentResp);
+            void onScanDocument(ScanDocumentResp baseScanDocumentResp);
         }
 
         public interface ISListener {
-            bool onReceivedDocument(BaseDocumentDetailsResp document);
-            bool onReceivedBiometricResult(BaseBiometricAuthResp baseBiometricAuth);
+            bool onReceivedDocument(DocumentDetailsResp document);
+            bool onReceivedBiometricResult(BiometricAuthResp baseBiometricAuth);
             bool onReceviedCardDetectionEvent(BaseCardDetectionEventResp baseCardDetectionEvent);
             void onPreConnect();
             void onConnected();
@@ -143,11 +143,13 @@ namespace PluginICAOClientSDK {
         //     Return device information.
         //
         // Exception: Unconnected exception occurs, some other exceptions.
-        public Response.DeviceDetails.BaseDeviceDetailsResp getDeviceDetails(bool deviceDetailsEnabled, bool presenceEnabled, TimeSpan timeoutMilliSec, int timeOutInterVal) {
-            return (Response.DeviceDetails.BaseDeviceDetailsResp)getDeviceDetailsAsync(deviceDetailsEnabled, presenceEnabled, null, timeOutInterVal).waitResponse(timeoutMilliSec);
+        public Response.DeviceDetails.DeviceDetailsResp getDeviceDetails(bool deviceDetailsEnabled, bool presenceEnabled,
+                                                                         long timeoutMilliSec, int timeOutInterval) {
+            return (Response.DeviceDetails.DeviceDetailsResp)getDeviceDetailsAsync(deviceDetailsEnabled, presenceEnabled, timeOutInterval, null).waitResponse(timeoutMilliSec);
         }
 
-        public ResponseSync<object> getDeviceDetailsAsync(bool deviceDetailsEnabled, bool presenceEnabled, DeviceDetailsListener deviceDetailsListener, int timeOutInterVal) {
+        public ResponseSync<object> getDeviceDetailsAsync(bool deviceDetailsEnabled, bool presenceEnabled,
+                                                          int timeOutInterval, DeviceDetailsListener deviceDetailsListener) {
             string cmdType = Utils.ToDescription(CmdType.GetDeviceDetails);
             string reqID = Utils.getUUID();
             RequireDeviceDetails requireDeviceDetails = new RequireDeviceDetails();
@@ -157,7 +159,7 @@ namespace PluginICAOClientSDK {
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = Utils.ToDescription(CmdType.GetDeviceDetails);
             req.requestID = reqID;
-            req.timeOutInterval = timeOutInterVal;
+            req.timeOutInterval = timeOutInterval;
             req.data = requireDeviceDetails;
 
             LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
@@ -186,24 +188,24 @@ namespace PluginICAOClientSDK {
         //     Return document informations details.
         //
         // Exception: Unconnected exception occurs, some other exceptions.
-        public BaseDocumentDetailsResp getDocumentDetails(bool mrzEnabled, bool imageEnabled,
-                                                          bool dataGroupEnabled, bool optionalDetailsEnabled,
-                                                          TimeSpan timeoutMilliSec, DocumentDetailsListener documentDetailsListener,
-                                                          int timeOutInterVal, string canValue,
-                                                          string challenge, bool caEnabled,
-                                                          bool taEnabled) {
+        public DocumentDetailsResp getDocumentDetails(bool mrzEnabled, bool imageEnabled,
+                                                      bool dataGroupEnabled, bool optionalDetailsEnabled,
+                                                      string canValue, string challenge,
+                                                      bool caEnabled, bool taEnabled, 
+                                                      long timeoutMilliSec, int timeOutInterval) {
 
-            return (BaseDocumentDetailsResp)getDocumentDetailsAsync(mrzEnabled, imageEnabled, dataGroupEnabled,
-                                                                    optionalDetailsEnabled, documentDetailsListener,
-                                                                    timeOutInterVal, canValue,
-                                                                    challenge, caEnabled,
-                                                                    taEnabled).waitResponse(timeoutMilliSec);
+            return (DocumentDetailsResp)getDocumentDetailsAsync(mrzEnabled, imageEnabled,
+                                                                dataGroupEnabled, optionalDetailsEnabled,
+                                                                canValue, challenge,
+                                                                caEnabled, taEnabled,
+                                                                timeOutInterval, null).waitResponse(timeoutMilliSec);
         }
+        
         public ResponseSync<object> getDocumentDetailsAsync(bool mrzEnabled, bool imageEnabled,
-                                                             bool dataGroupEnabled, bool optionalDetailsEnabled,
-                                                             DocumentDetailsListener documentDetailsListener, int timeOutInterVal,
-                                                             string canValue, string challenge,
-                                                             bool caEnabled, bool taEnabled) {
+                                                            bool dataGroupEnabled, bool optionalDetailsEnabled,
+                                                            string canValue, string challenge,
+                                                            bool caEnabled, bool taEnabled,
+                                                            int timeOutInterval, DocumentDetailsListener documentDetailsListener) {
             string cmdType = Utils.ToDescription(CmdType.GetInfoDetails);
             string reqID = Utils.getUUID();
             RequireInfoDetails requireInfoDetails = new RequireInfoDetails();
@@ -219,7 +221,7 @@ namespace PluginICAOClientSDK {
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = cmdType;
             req.requestID = reqID;
-            req.timeOutInterval = timeOutInterVal;
+            req.timeOutInterval = timeOutInterval;
             req.data = requireInfoDetails;
 
             LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
@@ -239,12 +241,6 @@ namespace PluginICAOClientSDK {
         }
         #endregion
 
-        #region AUTO GET DOCUMENT DETAILS
-        //public DocumentDetailsResp autoGetDocumentDetails() {
-        //    return wsClient.documentRespAuto;
-        //}
-        #endregion
-
         #region BIOMETRIC AUTHENTICATION
         //
         // Summary:
@@ -254,35 +250,31 @@ namespace PluginICAOClientSDK {
         //     Return result biometric authentication.
         //
         // Exception: Unconnected exception occurs, some other exceptions.
-        public BaseBiometricAuthResp biometricAuthentication(string biometricType, object challengeBiometric,
-                                                             TimeSpan timeoutSec, int timeOutInterVal,
-                                                             string challengeType, bool livenessEnabled,
-                                                             string cardNo) {
-            return (BaseBiometricAuthResp)biometricAuthenticationAsync(biometricType, challengeBiometric,
-                                                                       null, timeOutInterVal,
-                                                                       challengeType, livenessEnabled,
-                                                                       cardNo)
-                   .waitResponse(timeoutSec);
+        public BiometricAuthResp biometricAuthentication(BiometricType biometricType, object challengeBiometric,
+                                                         ChallengeType challengeType, bool livenessEnabled, string cardNo,
+                                                         long timeoutMilliSec, int timeOutInterval) {
+            return (BiometricAuthResp)biometricAuthenticationAsync(biometricType, challengeBiometric,
+                                                                   challengeType, livenessEnabled, cardNo,
+                                                                   timeOutInterval, null).waitResponse(timeoutMilliSec);
         }
 
-        public ResponseSync<object> biometricAuthenticationAsync(string biometricType, object challengeBiometric,
-                                                                  ISPluginClient.BiometricAuthenticationListener biometricAuthenticationListener,
-                                                                  int timeOut, string challengeType,
-                                                                  bool livenessEnabled, string cardNo) {
+        public ResponseSync<object> biometricAuthenticationAsync(BiometricType biometricType, object challengeBiometric,
+                                                                 ChallengeType challengeType, bool livenessEnabled, string cardNo,
+                                                                 int timeOutInterval, BiometricAuthenticationListener biometricAuthenticationListener) {
             string cmdType = Utils.ToDescription(CmdType.BiometricAuthentication);
             string reqID = Utils.getUUID();
 
             RequireBiometricAuth requireBiometricAuth = new RequireBiometricAuth();
-            requireBiometricAuth.biometricType = biometricType;
+            requireBiometricAuth.biometricType = Utils.ToDescription(biometricType);
             requireBiometricAuth.cardNo = cardNo;
-            requireBiometricAuth.challengeType = challengeType;
+            requireBiometricAuth.challengeType = Utils.ToDescription(challengeType);
             requireBiometricAuth.challenge = challengeBiometric;
             requireBiometricAuth.livenessEnabled = livenessEnabled;
 
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = cmdType;
             req.requestID = reqID;
-            req.timeOutInterval = timeOut;
+            req.timeOutInterval = timeOutInterval;
             req.data = requireBiometricAuth;
 
             LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
@@ -303,15 +295,14 @@ namespace PluginICAOClientSDK {
         #endregion
 
         #region CONNECT TO DEVICE
-        public BaseConnectToDeviceResp connectToDevice(bool confirmEnabled, string confirmCode,
+        public ConnectToDeviceResp connectToDevice(bool confirmEnabled, string confirmCode,
                                                    string clientName, ConfigConnect configConnect,
-                                                   TimeSpan timeoutMilliSec, int timeOutInterVal) {
-            return (BaseConnectToDeviceResp)connectToDeviceSync(confirmEnabled, confirmCode, clientName, configConnect, null, timeOutInterVal).waitResponse(timeoutMilliSec);
+                                                   long timeoutMilliSec, int timeOutInterval) {
+            return (ConnectToDeviceResp)connectToDeviceSync(confirmEnabled, confirmCode, clientName, configConnect, timeOutInterval, null).waitResponse(timeoutMilliSec);
         }
         public ResponseSync<object> connectToDeviceSync(bool confirmEnabled, string confirmCode,
-                                                         string clientName, ConfigConnect configConnect,
-                                                         ConnectToDeviceListener connectToDeviceListener,
-                                                         int timeOutInterVal) {
+                                                        string clientName, ConfigConnect configConnect,
+                                                        int timeOutInterval, ConnectToDeviceListener connectToDeviceListener) {
             string cmdType = Utils.ToDescription(CmdType.ConnectToDevice);
             string reqID = Utils.getUUID();
 
@@ -324,7 +315,7 @@ namespace PluginICAOClientSDK {
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = cmdType;
             req.requestID = reqID;
-            req.timeOutInterval = timeOutInterVal;
+            req.timeOutInterval = timeOutInterval;
             req.data = requireConnectDevice;
 
             LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
@@ -345,24 +336,26 @@ namespace PluginICAOClientSDK {
         #endregion
 
         #region DISPLAY INFORMATION
-        public BaseDisplayInformation displayInformation(string title, string type, string value,
-                                                         TimeSpan timeoutMilliSec, int timeOutInterVal) {
-            return (BaseDisplayInformation)displayInformationSync(title, type, value, null, timeOutInterVal).waitResponse(timeoutMilliSec);
+        public DisplayInformationResp displayInformation(string title, DisplayType type,
+                                                         string value, int timeOutInterval,
+                                                         long timeoutMilliSec) {
+            return (DisplayInformationResp)displayInformationSync(title, type, value, timeOutInterval, null).waitResponse(timeoutMilliSec);
         }
-        public ResponseSync<object> displayInformationSync(string title, string type, string value,
-                                                            DisplayInformationListener displayInformationListener, int timeOutInterVal) {
+        public ResponseSync<object> displayInformationSync(string title, DisplayType type,
+                                                           string value, int timeOutInterval,
+                                                           DisplayInformationListener displayInformationListener) {
             string cmdType = Utils.ToDescription(CmdType.DisplayInformation);
             string reqID = Utils.getUUID();
 
             DataDisplayInformation dataDisplay = new DataDisplayInformation();
             dataDisplay.title = title;
-            dataDisplay.type = type;
+            dataDisplay.type = Utils.ToDescription(type);
             dataDisplay.value = value;
 
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = cmdType;
             req.requestID = reqID;
-            req.timeOutInterval = timeOutInterVal;
+            req.timeOutInterval = timeOutInterval;
             req.data = dataDisplay;
 
             LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
@@ -383,11 +376,13 @@ namespace PluginICAOClientSDK {
         #endregion
 
         #region REFRESH READER
-        public Response.DeviceDetails.BaseDeviceDetailsResp refresh(bool deviceDetailsEnabled, bool presenceEnabled, TimeSpan timeoutMilliSec, int timeOutInterVal) {
-            return (Response.DeviceDetails.BaseDeviceDetailsResp)refreshAsync(deviceDetailsEnabled, presenceEnabled, null, timeOutInterVal).waitResponse(timeoutMilliSec);
+        public Response.DeviceDetails.DeviceDetailsResp refreshReader(bool deviceDetailsEnabled, bool presenceEnabled,
+                                                                      long timeoutMilliSec, int timeOutInterval) {
+            return (Response.DeviceDetails.DeviceDetailsResp)refreshReaderAsync(deviceDetailsEnabled, presenceEnabled, timeOutInterval, null).waitResponse(timeoutMilliSec);
         }
 
-        public ResponseSync<object> refreshAsync(bool deviceDetailsEnabled, bool presenceEnabled, DeviceDetailsListener deviceDetailsListener, int timeOutInterVal) {
+        public ResponseSync<object> refreshReaderAsync(bool deviceDetailsEnabled, bool presenceEnabled, 
+                                                       int timeOutInterval, DeviceDetailsListener deviceDetailsListener) {
             string cmdType = Utils.ToDescription(CmdType.Refresh);
             string reqID = Utils.getUUID();
             RequireDeviceDetails requireDeviceDetails = new RequireDeviceDetails();
@@ -397,7 +392,7 @@ namespace PluginICAOClientSDK {
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = Utils.ToDescription(CmdType.Refresh);
             req.requestID = reqID;
-            req.timeOutInterval = timeOutInterVal;
+            req.timeOutInterval = timeOutInterval;
             req.data = requireDeviceDetails;
 
             LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
@@ -418,22 +413,22 @@ namespace PluginICAOClientSDK {
         #endregion
 
         #region SCAN DOCUMENT
-        public Response.ScanDocument.BaseScanDocumentResp scanDocument(string scanType, bool saveEnabled,
-                                                                       TimeSpan timeoutMilliSec, int timeOutInterVal) {
-            return (BaseScanDocumentResp)scanDocumentAsync(scanType, saveEnabled, null, timeOutInterVal).waitResponse(timeoutMilliSec);
+        public ScanDocumentResp scanDocument(ScanType scanType, bool saveEnabled,
+                                             long timeoutMilliSec, int timeOutInterval) {
+            return (ScanDocumentResp)scanDocumentAsync(scanType, saveEnabled, timeOutInterval, null).waitResponse(timeoutMilliSec);
         }
-        public ResponseSync<object> scanDocumentAsync(string scanType, bool saveEnabled,
-                                                       ScanDocumentListenner scanDocumentListenner, int timeOutInterVal) {
+        public ResponseSync<object> scanDocumentAsync(ScanType scanType, bool saveEnabled,
+                                                      int timeOutInterval, ScanDocumentListenner scanDocumentListenner) {
             string cmdType = Utils.ToDescription(CmdType.ScanDocument);
             string reqID = Utils.getUUID();
             ScanDocument scanDocument = new ScanDocument();
-            scanDocument.scanType = scanType;
+            scanDocument.scanType = Utils.ToDescription(scanType);
             scanDocument.saveEnabled = saveEnabled;
 
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = Utils.ToDescription(CmdType.ScanDocument);
             req.requestID = reqID;
-            req.timeOutInterval = timeOutInterVal;
+            req.timeOutInterval = timeOutInterval;
             req.data = scanDocument;
 
             LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");

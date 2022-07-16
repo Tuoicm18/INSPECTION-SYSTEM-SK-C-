@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 namespace PluginICAOClientSDK.Response.GetDocumentDetails {
-    public class BaseDocumentDetailsResp : BaseResponse  {
+    public class DocumentDetailsResp : BaseResponse  {
         public DataDocumentDetails data { get; set; }
     }
 }

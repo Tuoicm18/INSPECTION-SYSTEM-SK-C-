@@ -19,8 +19,8 @@ using PluginICAOClientSDK.Response.ScanDocument;
 namespace PluginICAOClientSDK {
 
     #region DELEGATE
-    public delegate void DelegateAutoDocument(BaseDocumentDetailsResp documentDetailsResp);
-    public delegate void DelegateAutoBiometricResult(BaseBiometricAuthResp baseBiometricAuthResp);
+    public delegate void DelegateAutoDocument(DocumentDetailsResp documentDetailsResp);
+    public delegate void DelegateAutoBiometricResult(BiometricAuthResp baseBiometricAuthResp);
     public delegate void DelegateCardDetectionEvent(BaseCardDetectionEventResp cardDetectionEventResp);
     public delegate void DelegateConnect(bool isCoonect);
     public delegate void DelegateNotifyMessage(string json);
@@ -438,7 +438,7 @@ namespace PluginICAOClientSDK {
                         switch (cmd) {
                             case FUNC_GET_DEVICE_DETAILS: //Func 2.1
                             case FUNC_REFRESH: //Func 2.9
-                                BaseDeviceDetailsResp respDeviceDetails = JsonConvert.DeserializeObject<BaseDeviceDetailsResp>(json);
+                                DeviceDetailsResp respDeviceDetails = JsonConvert.DeserializeObject<DeviceDetailsResp>(json);
                                 sync.setSuccess(respDeviceDetails);
                                 if (sync.deviceDetailsListener != null) {
                                     sync.deviceDetailsListener.onDeviceDetails(respDeviceDetails);
@@ -451,35 +451,35 @@ namespace PluginICAOClientSDK {
                                 break;
                             case FUNC_GET_INFO_DETAILS: //Func 2.2
                                 //BaseDocumentDetailsResp baseDocumentDetailsResp = JsonConvert.DeserializeObject<BaseDocumentDetailsResp>(json);
-                                BaseDocumentDetailsResp baseDocumentDetailsResp = getDocumentDetails(json);
+                                DocumentDetailsResp baseDocumentDetailsResp = getDocumentDetails(json);
                                 sync.setSuccess(baseDocumentDetailsResp);
                                 if (sync.documentDetailsListener != null) {
                                     sync.documentDetailsListener.onDocumentDetails(baseDocumentDetailsResp);
                                 }
                                 break;
                             case FUNC_BIOMETRIC_AUTH: //Func 2.4
-                                BaseBiometricAuthResp biometricAuthenticationResp = biometricAuthentication(json);
+                                BiometricAuthResp biometricAuthenticationResp = biometricAuthentication(json);
                                 sync.setSuccess(biometricAuthenticationResp);
                                 if (sync.biometricAuthenticationListener != null) {
                                     sync.biometricAuthenticationListener.onBiometricAuthenticaton(biometricAuthenticationResp);
                                 }
                                 break;
                             case FUNC_CONNECT_DEVICE: //Func 2.5
-                                BaseConnectToDeviceResp connectToDeviceResp = connectToDevice(json);
+                                ConnectToDeviceResp connectToDeviceResp = connectToDevice(json);
                                 sync.setSuccess(connectToDeviceResp);
                                 if (sync.connectToDeviceListener != null) {
                                     sync.connectToDeviceListener.onConnectToDevice(connectToDeviceResp);
                                 }
                                 break;
                             case FUNC_DISPLAY_INFO: //Func 2.6
-                                BaseDisplayInformation displayInfor = displayInformation(json);
+                                DisplayInformationResp displayInfor = displayInformation(json);
                                 sync.setSuccess(displayInfor);
                                 if (sync.displayInformationListener != null) {
                                     sync.displayInformationListener.onDisplayInformation(displayInfor);
                                 }
                                 break;
                             case FUNC_SCAN_DOCUMENT: //Func 2.10
-                                BaseScanDocumentResp scanDocumentResp = scanDocument(json);
+                                ScanDocumentResp scanDocumentResp = scanDocument(json);
                                 sync.setSuccess(scanDocumentResp);
                                 if (sync.scanDocumentListenner != null) {
                                     sync.scanDocumentListenner.onScanDocument(scanDocumentResp);
@@ -513,11 +513,11 @@ namespace PluginICAOClientSDK {
                 }
                 else if (Utils.ToDescription(CmdType.SendInfoDetails).Equals(resp.cmdType)) { //Func 2.3
                     if (this.listener != null) {
-                        BaseDocumentDetailsResp documentDetails = getDocumentDetails(json);
+                        DocumentDetailsResp documentDetails = getDocumentDetails(json);
                         listener.onReceivedDocument(documentDetails);
                     }
                     else {
-                        BaseDocumentDetailsResp documentDetails = getDocumentDetails(json);
+                        DocumentDetailsResp documentDetails = getDocumentDetails(json);
                         if (null != delegateAuto) {
                             delegateAuto(documentDetails);
                         }
@@ -526,11 +526,11 @@ namespace PluginICAOClientSDK {
                 }
                 else if (Utils.ToDescription(CmdType.SendBiometricAuthentication).Equals(resp.cmdType)) { //Func 2.7
                     if (this.listener != null) {
-                        BaseBiometricAuthResp baseBiometricAuthResp = biometricAuthentication(json);
+                        BiometricAuthResp baseBiometricAuthResp = biometricAuthentication(json);
                         listener.onReceivedBiometricResult(baseBiometricAuthResp);
                     }
                     else {
-                        BaseBiometricAuthResp baseBiometricAuthResp = biometricAuthentication(json);
+                        BiometricAuthResp baseBiometricAuthResp = biometricAuthentication(json);
                         if (null != this.delegatebiometricResult) {
                             delegatebiometricResult(baseBiometricAuthResp);
                         }
@@ -563,29 +563,29 @@ namespace PluginICAOClientSDK {
         #endregion
 
         #region GET DOCUMENT DETAILS
-        private BaseDocumentDetailsResp getDocumentDetails(string json) {
-            BaseDocumentDetailsResp doc = JsonConvert.DeserializeObject<BaseDocumentDetailsResp>(json);
+        private DocumentDetailsResp getDocumentDetails(string json) {
+            DocumentDetailsResp doc = JsonConvert.DeserializeObject<DocumentDetailsResp>(json);
             return doc;
         }
         #endregion
 
         #region BIOMETRIC AUTHENTICATIOn
-        private BaseBiometricAuthResp biometricAuthentication(string json) {
-            BaseBiometricAuthResp biometricAuth = JsonConvert.DeserializeObject<BaseBiometricAuthResp>(json);
+        private BiometricAuthResp biometricAuthentication(string json) {
+            BiometricAuthResp biometricAuth = JsonConvert.DeserializeObject<BiometricAuthResp>(json);
             return biometricAuth;
         }
         #endregion
 
         #region 4.5 CONNECT TO DEVICE
-        private BaseConnectToDeviceResp connectToDevice(string json) {
-            BaseConnectToDeviceResp connectDevice = JsonConvert.DeserializeObject<BaseConnectToDeviceResp>(json);
+        private ConnectToDeviceResp connectToDevice(string json) {
+            ConnectToDeviceResp connectDevice = JsonConvert.DeserializeObject<ConnectToDeviceResp>(json);
             return connectDevice;
         }
         #endregion
 
         #region 4.6 DISPLAY INFORMATION
-        private BaseDisplayInformation displayInformation(string json) {
-            BaseDisplayInformation displayInformation = JsonConvert.DeserializeObject<BaseDisplayInformation>(json);
+        private DisplayInformationResp displayInformation(string json) {
+            DisplayInformationResp displayInformation = JsonConvert.DeserializeObject<DisplayInformationResp>(json);
             return displayInformation;
         }
         #endregion
@@ -598,8 +598,8 @@ namespace PluginICAOClientSDK {
         #endregion
 
         #region SCAN DOCUMENT
-        private BaseScanDocumentResp scanDocument(string json) {
-            BaseScanDocumentResp scanDocument = JsonConvert.DeserializeObject<BaseScanDocumentResp>(json);
+        private ScanDocumentResp scanDocument(string json) {
+            ScanDocumentResp scanDocument = JsonConvert.DeserializeObject<ScanDocumentResp>(json);
             return scanDocument;
         }
         #endregion

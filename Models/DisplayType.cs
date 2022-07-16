@@ -6,10 +6,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace PluginICAOClientSDK.Models {
-    public enum ChallengeType {
-        [Description("string")]
-        TYPE_STRING,
-        [Description("object")]
-        TYPE_OBJECT,
+    public enum DisplayType {
+        [Description("TEXT")]
+        TEXT,
+        [Description("HTML")]
+        HTML,
     }
 }

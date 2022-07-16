@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace PluginICAOClientSDK.Response.DisplayInformation {
-    public class BaseDisplayInformation : BaseResponse  {
+    public class DisplayInformationResp : BaseResponse  {
         public DataDisplayInformation data { get; set; }
     }
 }

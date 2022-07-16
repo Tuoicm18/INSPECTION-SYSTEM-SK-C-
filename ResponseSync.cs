@@ -21,9 +21,9 @@ namespace PluginICAOClientSDK {
         public ISPluginClient.DisplayInformationListener displayInformationListener { get; set; }
         public ISPluginClient.ScanDocumentListenner scanDocumentListenner { get; set; }
 
-        public T waitResponse (TimeSpan timeout) {
+        public T waitResponse (long timeoutMilliSec) {
             try {
-                if (!wait.Wait(timeout)) {
+                if (!wait.Wait(TimeSpan.FromMilliseconds(timeoutMilliSec))) {
                     throw new ISPluginException("Timeout to receive response");
                 }
                 if(error != null) {
