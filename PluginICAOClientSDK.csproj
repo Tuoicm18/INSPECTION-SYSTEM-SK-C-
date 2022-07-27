@@ -86,7 +86,7 @@
     <Compile Include="Response\BiometricAuth\BiometricAuthResp.cs" />
     <Compile Include="Response\BiometricAuth\DataBiometricAuth.cs" />
     <Compile Include="Models\DataGroup.cs" />
-    <Compile Include="Response\CardDetectionEvent\BaseCardDetectionEventResp.cs" />
+    <Compile Include="Response\CardDetectionEvent\CardDetectionEventResp.cs" />
     <Compile Include="Response\CardDetectionEvent\DataCardDetectionEvent.cs" />
     <Compile Include="Response\ConnectToDevice\ConnectToDeviceResp.cs" />
     <Compile Include="Response\ConnectToDevice\DataConnectToDevice.cs" />

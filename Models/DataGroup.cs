@@ -2,9 +2,9 @@
 
 namespace PluginICAOClientSDK.Models {
     public class DataGroup {
-        public byte[] dg1 { get; set; }
-        public byte[] dg2 { get; set; }
-        public byte [] dg3 { get; set; }
-        public byte [] dg13 { get; set; }
+        public string dg1 { get; set; }
+        public string dg2 { get; set; }
+        public string dg3 { get; set; }
+        public string dg13 { get; set; }
     }
 }

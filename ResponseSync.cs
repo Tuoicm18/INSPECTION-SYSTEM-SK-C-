@@ -14,16 +14,15 @@ namespace PluginICAOClientSDK {
         }
         private Exception error;
         public ISPluginClient.DeviceDetailsListener deviceDetailsListener { get; set; }
-        public ISPluginClient.RefreshListenner refreshListenner { get; set; }
         public ISPluginClient.DocumentDetailsListener documentDetailsListener { get; set; }
-        public ISPluginClient.BiometricAuthenticationListener biometricAuthenticationListener { get; set; }
+        public ISPluginClient.BiometricAuthListener biometricAuthenticationListener { get; set; }
         public ISPluginClient.ConnectToDeviceListener connectToDeviceListener { get; set; }
         public ISPluginClient.DisplayInformationListener displayInformationListener { get; set; }
         public ISPluginClient.ScanDocumentListenner scanDocumentListenner { get; set; }
 
-        public T waitResponse (long timeoutMilliSec) {
+        public T waitResponse (int timeout) {
             try {
-                if (!wait.Wait(TimeSpan.FromMilliseconds(timeoutMilliSec))) {
+                if (!wait.Wait(TimeSpan.FromMilliseconds(timeout))) {
                     throw new ISPluginException("Timeout to receive response");
                 }
                 if(error != null) {

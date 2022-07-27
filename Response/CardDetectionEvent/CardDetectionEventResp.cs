@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace PluginICAOClientSDK.Response.CardDetectionEvent {
-    public class BaseCardDetectionEventResp : BaseResponse {
+    public class CardDetectionEventResp : BaseResponse {
         public DataCardDetectionEvent data { get; set; }
     }
 }

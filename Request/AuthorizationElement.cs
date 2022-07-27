@@ -16,10 +16,12 @@ namespace PluginICAOClientSDK.Request {
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string label { get; set; }
+
         public string title { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string text { get; set; }
+
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, bool> multipleSelect { get; set; }
 
@@ -39,13 +41,5 @@ namespace PluginICAOClientSDK.Request {
         Single,
         [Description("NVP")]
         NVP
-    }
-
-    internal static class Extensions {
-        public static string ToDescription(this Enum value) {
-            FieldInfo field = value.GetType().GetField(value.ToString());
-            DescriptionAttribute attribute = Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute)) as DescriptionAttribute;
-            return attribute == null ? value.ToString() : attribute.Description;
-        }
     }
 }

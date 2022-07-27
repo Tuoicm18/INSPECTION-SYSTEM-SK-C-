@@ -20,10 +20,10 @@ namespace PluginICAOClientSDK {
 
     #region DELEGATE
     public delegate void DelegateAutoDocument(DocumentDetailsResp documentDetailsResp);
-    public delegate void DelegateAutoBiometricResult(BiometricAuthResp baseBiometricAuthResp);
-    public delegate void DelegateCardDetectionEvent(BaseCardDetectionEventResp cardDetectionEventResp);
-    public delegate void DelegateConnect(bool isCoonect);
-    public delegate void DelegateNotifyMessage(string json);
+    public delegate void DelegateAutoBiometricResult(BiometricAuthResp biometricAuthResp);
+    public delegate void DelegateCardDetectionEvent(CardDetectionEventResp cardDetectionEventResp);
+    public delegate void DelegateConnect(bool isConnect);
+    public delegate void DelegateReceive(string json);
     #endregion
 
     public class WebSocketClientHandler {
@@ -46,7 +46,7 @@ namespace PluginICAOClientSDK {
         private DelegateAutoBiometricResult delegatebiometricResult;
         private DelegateCardDetectionEvent delegateCardEvent;
         public DelegateConnect delegateConnect;
-        public DelegateNotifyMessage delegateNotifyMessage;
+        public DelegateReceive delegateReceive;
         #endregion
 
         private StringBuilder response;
@@ -76,7 +76,7 @@ namespace PluginICAOClientSDK {
         public WebSocketClientHandler(string ip, int port,
                                       bool secureConnect, DelegateAutoDocument dlgAutoGetDocument,
                                       DelegateAutoBiometricResult delegateAutoBiometric, DelegateCardDetectionEvent dlgCardEvent,
-                                      DelegateConnect delegateConnect, DelegateNotifyMessage dlgNotifyMessage) {
+                                      DelegateConnect delegateConnect, DelegateReceive delegateReceive) {
 
             try {
                 if (secureConnect) {
@@ -92,7 +92,7 @@ namespace PluginICAOClientSDK {
                 this.delegatebiometricResult = delegateAutoBiometric;
                 this.delegateCardEvent = dlgCardEvent;
                 this.delegateConnect = delegateConnect;
-                this.delegateNotifyMessage = dlgNotifyMessage;
+                this.delegateReceive = delegateReceive;
                 SetWebSocketSharpEvents();
             }
             catch (Exception e) {
@@ -118,6 +118,7 @@ namespace PluginICAOClientSDK {
                 throw e;
             }
         }
+
         #endregion
 
         #region TIMER RE-CONECT
@@ -244,8 +245,16 @@ namespace PluginICAOClientSDK {
             try {
                 ws.OnMessage += (sender, e) => {
                     //ResetTimeoutTimer();
-                    if(null != this.delegateNotifyMessage) {
-                        this.delegateNotifyMessage(e.Data);
+                    if(null != this.delegateReceive) {
+                        this.delegateReceive(e.Data);
+                    }
+                    BaseResponse baseResponse = JsonConvert.DeserializeObject<BaseResponse>(e.Data);
+                    if(null != baseResponse) {
+                        if(null != listener) {
+                            if(baseResponse.errorCode == Utils.ERR_FOR_DENIED_CONNECTION) {
+                                listener.onConnectDenied();
+                            }
+                        }
                     }
                     ws.EmitOnPing = true;
                     if (!ws.Ping()) {
@@ -443,9 +452,6 @@ namespace PluginICAOClientSDK {
                                 if (sync.deviceDetailsListener != null) {
                                     sync.deviceDetailsListener.onDeviceDetails(respDeviceDetails);
                                 }
-                                if (sync.refreshListenner != null) {
-                                    sync.refreshListenner.onRefresh(respDeviceDetails);
-                                }
                                 break;
                             case "SendInfoDetails":
                                 break;
@@ -473,9 +479,10 @@ namespace PluginICAOClientSDK {
                                 break;
                             case FUNC_DISPLAY_INFO: //Func 2.6
                                 DisplayInformationResp displayInfor = displayInformation(json);
-                                sync.setSuccess(displayInfor);
+                                sync.setSuccess(null);
                                 if (sync.displayInformationListener != null) {
                                     sync.displayInformationListener.onDisplayInformation(displayInfor);
+                                    sync.displayInformationListener.onSuccess();
                                 }
                                 break;
                             case FUNC_SCAN_DOCUMENT: //Func 2.10
@@ -538,11 +545,11 @@ namespace PluginICAOClientSDK {
                 }
                 else if (Utils.ToDescription(CmdType.CardDetectionEvent).Equals(resp.cmdType)) { //Func 2.8
                     if (this.listener != null) {
-                        BaseCardDetectionEventResp baseCardDetectionEventResp = cardDetectionEvent(json);
+                        CardDetectionEventResp baseCardDetectionEventResp = cardDetectionEvent(json);
                         listener.onReceviedCardDetectionEvent(baseCardDetectionEventResp);
                     }
                     else {
-                        BaseCardDetectionEventResp baseCardDetectionEventResp = cardDetectionEvent(json);
+                        CardDetectionEventResp baseCardDetectionEventResp = cardDetectionEvent(json);
                         if(null != this.delegateCardEvent) {
                             delegateCardEvent(baseCardDetectionEventResp);
                         }
@@ -550,6 +557,11 @@ namespace PluginICAOClientSDK {
                 }
                 else {
                     LOGGER.Debug("Not found Request with RequestID [" + reqID + "]" + " skip Response [" + json + "]");
+                    if(resp.errorCode == Utils.ERR_FOR_DENIED_CONNECTION) {
+                        if(null != listener) {
+                            listener.onConnectDenied();
+                        }
+                    }
                     if (resp.errorCode != Utils.SUCCESS) {
                         //throw new ISPluginException(resp.errorMessage + ", Error Code [" + resp.errorCode + "]");
                         throw new ISPluginException(resp.errorCode, resp.errorMessage);
@@ -591,8 +603,8 @@ namespace PluginICAOClientSDK {
         #endregion
 
         #region CARD DETECTION EVENT 2022.05.10
-        private BaseCardDetectionEventResp cardDetectionEvent(string json) {
-            BaseCardDetectionEventResp baseCardDetectionEvent = JsonConvert.DeserializeObject<BaseCardDetectionEventResp>(json);
+        private CardDetectionEventResp cardDetectionEvent(string json) {
+            CardDetectionEventResp baseCardDetectionEvent = JsonConvert.DeserializeObject<CardDetectionEventResp>(json);
             return baseCardDetectionEvent;
         }
         #endregion

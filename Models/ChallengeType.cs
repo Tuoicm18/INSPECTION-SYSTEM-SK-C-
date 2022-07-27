@@ -1,15 +1,16 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PluginICAOClientSDK.Models {
     public enum ChallengeType {
         [Description("string")]
+        [JsonConverter(typeof(StringEnumConverter))]
         TYPE_STRING,
         [Description("object")]
+        [JsonConverter(typeof(StringEnumConverter))]
         TYPE_OBJECT,
     }
 }
