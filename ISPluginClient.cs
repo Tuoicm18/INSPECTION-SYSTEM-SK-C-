@@ -12,12 +12,12 @@ using PluginICAOClientSDK.Response.ScanDocument;
 namespace PluginICAOClientSDK {
     public class ISPluginClient {
 
-        #region DELARCE VARIABLE
+        #region VARIABLE
         private Logger LOGGER = new Logger(LogLevel.Debug);
 
         private WebSocketClientHandler wsClient;
         private ISListener listener;
-        public double timeIntervalReconnect;
+        private ISPluginClientDelegate pluginClientDelegate;
 
         #region DELEGATE 
         public DelegateAutoDocument delegateAutoGetDocument;
@@ -35,7 +35,7 @@ namespace PluginICAOClientSDK {
         /// </summary>
         /// <param name="endPointUrl">End point URL Websocket Server</param>
         /// <param name="listener">Listenner for Client Webscoket DeviceDetails, DocumentDetais...etc</param>
-        public ISPluginClient(string ip, int port,
+        private ISPluginClient(string ip, int port,
                               bool isSecure, DelegateAutoDocument delegateAutoGetDocument,
                               DelegateAutoBiometricResult delegateBiometricResult, DelegateCardDetectionEvent delegateCardEvent,
                               DelegateConnect delegateConnectSocket, DelegateReceive delegateReceive) {
@@ -47,6 +47,12 @@ namespace PluginICAOClientSDK {
 
         public ISPluginClient(string ip, int port, bool isSecure, ISListener listener) {
             wsClient = new WebSocketClientHandler(ip, port, isSecure, listener);
+            this.listener = listener;
+        }
+
+        public ISPluginClient(string ip, int port, bool isSecure, ISPluginClientDelegate pluginClientDelegate) {
+            wsClient = new WebSocketClientHandler(ip, port, isSecure, pluginClientDelegate);
+            this.pluginClientDelegate = pluginClientDelegate;
         }
         #endregion
 
@@ -105,6 +111,24 @@ namespace PluginICAOClientSDK {
         }
         #endregion
 
+        #region SET DELEGATE
+        public void setDelegate(ISPluginClientDelegate pluginClientDelegate) {
+            this.pluginClientDelegate = pluginClientDelegate;
+        }
+        #endregion
+
+        #region SET TIMEOUT INTERVAL RE-CONNECT
+        public void setTimeIntervalReConnect(double timeInterval) {
+            wsClient.timeIntervalReConnect = timeInterval;
+        }
+        #endregion
+
+        #region SET TIMEOUT INTERVAL RE-CONNECT
+        public void setTotalOfTimesReConnect(int totalReConnect) {
+            wsClient.totalOfTimesReConnect = totalReConnect;
+        }
+        #endregion
+
         #region SHUTDOWN CLIENT
         //
         // Summary:
@@ -126,7 +150,12 @@ namespace PluginICAOClientSDK {
         //}
 
         public void connect() {
-            wsClient.wsConnect();
+            try {
+                wsClient.wsConnect();
+            }
+            catch (Exception ex) {
+                LOGGER.Error(ex.ToString());
+            }
         }
         #endregion
 
@@ -169,6 +198,12 @@ namespace PluginICAOClientSDK {
             if (this.listener != null) {
                 this.listener.doSend(cmdType, reqID, req);
             }
+
+            if(null != this.pluginClientDelegate) {
+                if(null != this.pluginClientDelegate.dlgSend) {
+                    pluginClientDelegate.dlgSend(cmdType, reqID, req);
+                }
+            }
             wsClient.sendData(JsonConvert.SerializeObject(req));
             return responseSync;
         }
@@ -187,20 +222,21 @@ namespace PluginICAOClientSDK {
                                                       bool dataGroupEnabled, bool optionalDetailsEnabled,
                                                       string canValue, string challenge,
                                                       bool caEnabled, bool taEnabled,
-                                                      int timeoutInterval) {
+                                                      bool paEnabled, int timeoutInterval) {
 
             return (DocumentDetailsResp)getDocumentDetailsAsync(mrzEnabled, imageEnabled,
                                                                 dataGroupEnabled, optionalDetailsEnabled,
                                                                 canValue, challenge,
                                                                 caEnabled, taEnabled,
-                                                                timeoutInterval, null).waitResponse(timeoutInterval);
+                                                                paEnabled, timeoutInterval, null).waitResponse(timeoutInterval);
         }
 
         public ResponseSync<object> getDocumentDetailsAsync(bool mrzEnabled, bool imageEnabled,
                                                             bool dataGroupEnabled, bool optionalDetailsEnabled,
                                                             string canValue, string challenge,
                                                             bool caEnabled, bool taEnabled,
-                                                            int timeoutInterval, DocumentDetailsListener documentDetailsListener) {
+                                                            bool paEnabled, int timeoutInterval,
+                                                            DocumentDetailsListener documentDetailsListener) {
             string cmdType = Utils.ToDescription(CmdType.GetInfoDetails);
             string reqID = Utils.getUUID();
             RequireInfoDetails requireInfoDetails = new RequireInfoDetails();
@@ -212,6 +248,7 @@ namespace PluginICAOClientSDK {
             requireInfoDetails.challenge = challenge;
             requireInfoDetails.caEnabled = caEnabled;
             requireInfoDetails.taEnabled = taEnabled;
+            requireInfoDetails.paEnabled = paEnabled;
 
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = cmdType;
@@ -230,6 +267,12 @@ namespace PluginICAOClientSDK {
 
             if (this.listener != null) {
                 this.listener.doSend(cmdType, reqID, req);
+            }
+
+            if (null != this.pluginClientDelegate) {
+                if (null != this.pluginClientDelegate.dlgSend) {
+                    pluginClientDelegate.dlgSend(cmdType, reqID, req);
+                }
             }
             wsClient.sendData(JsonConvert.SerializeObject(req));
             return responseSync;
@@ -260,9 +303,9 @@ namespace PluginICAOClientSDK {
             string reqID = Utils.getUUID();
 
             RequireBiometricAuth requireBiometricAuth = new RequireBiometricAuth();
-            requireBiometricAuth.biometricType = biometricType;
+            requireBiometricAuth.biometricType = Utils.ToDescription(biometricType);
             requireBiometricAuth.cardNo = cardNo;
-            requireBiometricAuth.challengeType = challengeType;
+            requireBiometricAuth.challengeType = Utils.ToDescription(challengeType);
             requireBiometricAuth.challenge = challengeBiometric;
             requireBiometricAuth.livenessEnabled = livenessEnabled;
 
@@ -283,6 +326,12 @@ namespace PluginICAOClientSDK {
 
             if (this.listener != null) {
                 this.listener.doSend(cmdType, reqID, req);
+            }
+
+            if (null != this.pluginClientDelegate) {
+                if (null != this.pluginClientDelegate.dlgSend) {
+                    pluginClientDelegate.dlgSend(cmdType, reqID, req);
+                }
             }
             wsClient.sendData(JsonConvert.SerializeObject(req));
             return responseSync;
@@ -325,6 +374,12 @@ namespace PluginICAOClientSDK {
             if (this.listener != null) {
                 this.listener.doSend(cmdType, reqID, req);
             }
+
+            if (null != this.pluginClientDelegate) {
+                if (null != this.pluginClientDelegate.dlgSend) {
+                    pluginClientDelegate.dlgSend(cmdType, reqID, req);
+                }
+            }
             wsClient.sendData(JsonConvert.SerializeObject(req));
             return responseSync;
         }
@@ -343,7 +398,7 @@ namespace PluginICAOClientSDK {
 
             DataDisplayInformation dataDisplay = new DataDisplayInformation();
             dataDisplay.title = title;
-            dataDisplay.type = type;
+            dataDisplay.type = Utils.ToDescription(type);
             dataDisplay.value = value;
 
             ISRequest<object> req = new ISRequest<object>();
@@ -363,6 +418,12 @@ namespace PluginICAOClientSDK {
 
             if (this.listener != null) {
                 this.listener.doSend(cmdType, reqID, req);
+            }
+
+            if (null != this.pluginClientDelegate) {
+                if (null != this.pluginClientDelegate.dlgSend) {
+                    pluginClientDelegate.dlgSend(cmdType, reqID, req);
+                }
             }
             wsClient.sendData(JsonConvert.SerializeObject(req));
             return responseSync;
@@ -400,6 +461,12 @@ namespace PluginICAOClientSDK {
             if (this.listener != null) {
                 this.listener.doSend(cmdType, reqID, req);
             }
+
+            if (null != this.pluginClientDelegate) {
+                if (null != this.pluginClientDelegate.dlgSend) {
+                    pluginClientDelegate.dlgSend(cmdType, reqID, req);
+                }
+            }
             wsClient.sendData(JsonConvert.SerializeObject(req));
             return responseSync;
         }
@@ -414,7 +481,7 @@ namespace PluginICAOClientSDK {
             string cmdType = Utils.ToDescription(CmdType.ScanDocument);
             string reqID = Utils.getUUID();
             ScanDocument scanDocument = new ScanDocument();
-            scanDocument.scanType = scanType;
+            scanDocument.scanType = Utils.ToDescription(scanType);
             scanDocument.saveEnabled = saveEnabled;
 
             ISRequest<object> req = new ISRequest<object>();
@@ -435,15 +502,22 @@ namespace PluginICAOClientSDK {
             if (this.listener != null) {
                 this.listener.doSend(cmdType, reqID, req);
             }
+
+            if (null != this.pluginClientDelegate) {
+                if (null != this.pluginClientDelegate.dlgSend) {
+                    pluginClientDelegate.dlgSend(cmdType, reqID, req);
+                }
+            }
+
             wsClient.sendData(JsonConvert.SerializeObject(req));
             return responseSync;
         }
         #endregion
 
         #region FOR TEST
-        public void reConnectSocket(int interval, int totalOfTimes) {
+        public void reConnectSocket() {
             try {
-                wsClient.reconnectSocket(interval, totalOfTimes);
+                wsClient.reconnectSocket();
             }
             catch (Exception ex) {
                 throw ex;

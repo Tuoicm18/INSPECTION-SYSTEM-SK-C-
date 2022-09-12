@@ -10,5 +10,6 @@ namespace PluginICAOClientSDK.Models {
         public string challenge { get; set; }
         public bool caEnabled { get; set; }
         public bool taEnabled { get; set; }
+        public bool paEnabled { get; set; }
     }
 }

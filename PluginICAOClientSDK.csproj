@@ -60,6 +60,7 @@
     <Compile Include="ISExtentions.cs" />
     <Compile Include="ISMessage.cs" />
     <Compile Include="ISPluginClient.cs" />
+    <Compile Include="ISPluginClientDelegate.cs" />
     <Compile Include="ISRequest.cs" />
     <Compile Include="ISResponse.cs" />
     <Compile Include="Models\BiometricType.cs" />

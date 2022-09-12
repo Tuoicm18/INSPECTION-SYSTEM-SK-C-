@@ -5,8 +5,7 @@ using System.Collections.Generic;
 
 namespace PluginICAOClientSDK.Models {
     public class ScanDocument {
-        [JsonConverter(typeof(StringEnumConverter))]
-        public ScanType scanType { get; set; }
+        public string scanType { get; set; }
         public bool saveEnabled { get; set; }
     }
 }

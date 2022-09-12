@@ -30,6 +30,9 @@ namespace PluginICAOClientSDK {
 
         #region VARIABLE
         private static readonly Logger LOGGER = new Logger(LogLevel.Debug);
+        private ISPluginClientDelegate pluginClientDelegate;
+        public double timeIntervalReConnect { get; set; } = 3000;
+        public int totalOfTimesReConnect { get; set; } = 5;
 
         #region CONST
         private const string FUNC_GET_DEVICE_DETAILS = "GetDeviceDetails";
@@ -52,7 +55,6 @@ namespace PluginICAOClientSDK {
         private StringBuilder response;
         private readonly ISPluginClient.ISListener listener;
         private readonly int MAX_PING = 15;
-        private double timeIntervalReconnect = 10;
         public readonly Dictionary<string, ResponseSync<object>> request = new Dictionary<string, ResponseSync<object>>();
 
         private Timer timeoutTimer;
@@ -68,8 +70,7 @@ namespace PluginICAOClientSDK {
         private System.Timers.Timer timerConnect = new System.Timers.Timer();
         private object locker = new object();
         private System.Threading.ManualResetEvent timerDead = new System.Threading.ManualResetEvent(false);
-        private int countReConnect = 0;
-
+        private int countReConnect = 1;
         #endregion
 
         #region CONSTRUCTOR
@@ -119,6 +120,25 @@ namespace PluginICAOClientSDK {
             }
         }
 
+        public WebSocketClientHandler(string ip, int port, bool secureConnect, ISPluginClientDelegate pluginClientDelegate) {
+            try {
+                if (secureConnect) {
+                    string endPointUrlWSS = "wss://" + ip + ":" + port + "/ISPlugin";
+                    ws = new WebSocket(endPointUrlWSS);
+                    ws.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
+                }
+                else {
+                    string endPointUrlWS = "ws://" + ip + ":" + port + "/ISPlugin";
+                    ws = new WebSocket(endPointUrlWS);
+                }
+                this.pluginClientDelegate = pluginClientDelegate;
+                SetWebSocketSharpEvents();
+            }
+            catch (Exception e) {
+                throw e;
+            }
+        }
+
         #endregion
 
         #region TIMER RE-CONECT
@@ -152,14 +172,27 @@ namespace PluginICAOClientSDK {
             LOGGER.Debug("RE-CONNECT");
         }
 
-        public void reconnectSocket(int interval, int totalOfTimes) {
+        public void reconnectSocket() {
             try {
+                LOGGER.Debug("=> RE-CONNECT");
                 timerDead.Reset();
-                timerConnect.Interval = interval;
+                timerConnect.Interval = timeIntervalReConnect;
                 timerConnect.Elapsed += Timer_Elapsed;
                 timerConnect.Start();
 
-                if (this.countReConnect == totalOfTimes) {
+                if (null != listener) {
+                    listener.onPreConnect();
+                }
+
+                if (null != this.pluginClientDelegate) {
+                    if (null != this.pluginClientDelegate.dlgReConnect) {
+                        this.pluginClientDelegate.dlgReConnect(true);
+                    }
+                }
+
+                LOGGER.Debug(" => COUNT RE-CONNECT " + this.countReConnect);
+
+                if (this.countReConnect == totalOfTimesReConnect) {
                     StopTimer();
                 }
             }
@@ -174,16 +207,27 @@ namespace PluginICAOClientSDK {
                 if (timerDead.WaitOne(0)) return;
                 // etc...
                 countReConnect++;
-                wsConnect();
+                ws.Connect();
             }
         }
 
         private void StopTimer() {
             lock (locker) {
+                LOGGER.Debug("STOP RE-CONNECT");
                 timerDead.Set();
                 timerConnect.Stop();
                 countReConnect = 0;
                 ws.Close();
+
+                if (null != this.pluginClientDelegate) {
+                    if (null != this.pluginClientDelegate.dlgDisConnected) {
+                        this.pluginClientDelegate.dlgDisConnected(true);
+                    }
+                }
+
+                if (listener != null) {
+                    listener.onDisconnected();
+                }
             }
         }
 
@@ -192,11 +236,11 @@ namespace PluginICAOClientSDK {
         #region WEBSOCKET EVENTS
         public void SetWebSocketSharpEvents() {
             try {
-                wsOnOpenHandle();
                 wsOnMessageHandle();
+                wsOnOpenHandle();
                 wsOnErrorHandle();
                 wsOnCloseHandle();
-                wsConnect();
+                //wsConnect();
             }
             catch (Exception e) {
                 throw e;
@@ -206,7 +250,11 @@ namespace PluginICAOClientSDK {
 
         #region CONNECT HANDLE
         public void wsConnect() {
-            ws.Connect();
+            try {
+                ws.Connect();
+            } catch(Exception ex) {
+                LOGGER.Error(ex.ToString());
+            }
         }
         #endregion
 
@@ -215,23 +263,28 @@ namespace PluginICAOClientSDK {
             try {
                 ws.OnOpen += (sender, e) => {
                     try {
+                        LOGGER.Debug(" => CONNECT SUCCESSFULLY");
                         //ResetTimeoutTimer();
                         isConnect = true;
-                        if(null != this.delegateConnect) {
+                        if (null != this.delegateConnect) {
                             delegateConnect(true);
                         }
-                        timerDead.Set();
-                        this.countReConnect = 0;
 
-                        LOGGER.Debug("CONNECT SUCCESSFULLY");
+                        if (null != this.pluginClientDelegate) {
+                            if (null != this.pluginClientDelegate.dlgConnected) {
+                                this.pluginClientDelegate.dlgConnected(true);
+                            }
+                        }
                         if (listener != null) {
                             listener.onConnected();
                         }
+                        timerDead.Set();
+                        this.countReConnect = 0;
+                        
                     }
                     catch (WebSocketException eConnect) {
-                        LOGGER.Debug("WEBSOCKET CLIETN FAILED TO CONNECT " + eConnect.ToString());
+                        LOGGER.Debug("=> WEBSOCKET CLIETN FAILED TO CONNECT " + eConnect.ToString());
                     }
-                    return;
                 };
             }
             catch (Exception ex) {
@@ -244,19 +297,28 @@ namespace PluginICAOClientSDK {
         private void wsOnMessageHandle() {
             try {
                 ws.OnMessage += (sender, e) => {
+                    ws.EmitOnPing = true;
                     //ResetTimeoutTimer();
-                    if(null != this.delegateReceive) {
+                    if (null != this.delegateReceive) {
                         this.delegateReceive(e.Data);
                     }
-                    BaseResponse baseResponse = JsonConvert.DeserializeObject<BaseResponse>(e.Data);
-                    if(null != baseResponse) {
-                        if(null != listener) {
-                            if(baseResponse.errorCode == Utils.ERR_FOR_DENIED_CONNECTION) {
-                                listener.onConnectDenied();
-                            }
-                        }
-                    }
-                    ws.EmitOnPing = true;
+
+                    //BaseResponse baseResponse = JsonConvert.DeserializeObject<BaseResponse>(e.Data);
+                    //if (null != baseResponse) {
+                    //    if (baseResponse.errorCode == Utils.ERR_FOR_DENIED_CONNECTION) {
+                    //        StopTimer();
+                    //        LOGGER.Debug(" => CONNECTION DENIED");
+                    //        if (null != listener) {
+                    //            listener.onConnectDenied();
+                    //        }
+                    //        if (null != this.pluginClientDelegate) {
+                    //            if (null != this.pluginClientDelegate.dlgConnectDenied) {
+                    //                this.pluginClientDelegate.dlgConnectDenied(true);
+                    //            }
+                    //        }
+                    //    }
+                    //}
+
                     if (!ws.Ping()) {
                         //!ws.Ping()
                         //Try Ping RE-CONNECT
@@ -266,7 +328,7 @@ namespace PluginICAOClientSDK {
                         int countPong = 0;
                         int countPing = 0;
                         System.Timers.Timer timerPingPong = new System.Timers.Timer();
-                        timerPingPong.Interval = this.timeIntervalReconnect * 1000;
+                        timerPingPong.Interval = this.timeIntervalReConnect;
                         timerPingPong.Elapsed += (senderPingPong, ePingPong) => {
                             countPing++;
                             LOGGER.Debug("PING");
@@ -344,13 +406,24 @@ namespace PluginICAOClientSDK {
         private void wsOnErrorHandle() {
             try {
                 ws.OnError += (sender, e) => {
+                    LOGGER.Debug("=> SOCKET CLIENT ERROR MESSAGE " + e.Message);
                     // stop it here
                     //StopTimeoutTimer();
-                    LOGGER.Debug("SOCKET CLIENT ERROR MESSAGE " + e.Message);
                     //An exception has occurred during an OnMessage event. An error has occurred in closing the connection.
                     if (!ws.IsAlive) {
                         this.isShutdown = true;
                         ws.Close();
+
+                        if (null != this.pluginClientDelegate) {
+                            if (null != this.pluginClientDelegate.dlgDisConnected) {
+                                this.pluginClientDelegate.dlgDisConnected(true);
+                            }
+                        }
+
+                        if (listener != null) {
+                            listener.onDisconnected();
+                        }
+
                     }
                     else {
                         ws.EmitOnPing = true;
@@ -369,18 +442,36 @@ namespace PluginICAOClientSDK {
         #region CLOSE HANDLE
         private void wsOnCloseHandle() {
             ws.OnClose += (sender, e) => {
+                LOGGER.Debug(" => ON CLOSE|" + "CODE: " + e.Code + "|REASON: " + e.Reason);
+                if(e.Code == 2609) {
+                    StopTimer();
+                    ws.Close();
+                    LOGGER.Debug(" => CONNECTION DENIED");
+
+                    this.isConnect = false;
+                    if (null != this.delegateConnect) {
+                        delegateConnect(false);
+                    }
+
+                    if (null != listener) {
+                        listener.onConnectDenied();
+                    }
+                    if (null != this.pluginClientDelegate) {
+                        if (null != this.pluginClientDelegate.dlgConnectDenied) {
+                            this.pluginClientDelegate.dlgConnectDenied(true);
+                        }
+                        if (null != this.pluginClientDelegate.dlgConnected) {
+                            this.pluginClientDelegate.dlgConnected(false);
+                        }
+                    }
+                } else {
+                    reconnectSocket();
+                }
+
                 // and here
-                this.isConnect = false;
-                if(null != this.delegateConnect) {
-                    delegateConnect(false);
-                }
-
-                if (listener != null) {
-                    listener.onDisconnected();
-                }
-
                 if (this.isShutdown) {
                     //StopTimeoutTimer();
+                    StopTimer();
                 }
                 else {
                     //ResetTimeoutTimer();
@@ -406,12 +497,12 @@ namespace PluginICAOClientSDK {
                 this.isShutdown = true;
                 this.ws.Close();
                 StopTimer();
-                LOGGER.Debug("SOCKET CLIENT SHUTDOWN");
+                LOGGER.Debug("=> SOCKET CLIENT SHUTDOWN");
                 //StopTimeoutTimer();
             }
             catch (Exception e) {
                 //StopTimeoutTimer();
-                LOGGER.Debug("SOCKET CLIENT SHUTDOWN ERROR " + e.ToString());
+                LOGGER.Debug("=> SOCKET CLIENT SHUTDOWN ERROR " + e.ToString());
             }
         }
         #endregion
@@ -424,6 +515,12 @@ namespace PluginICAOClientSDK {
                 LOGGER.Debug("<<< REC: RequestID [" + reqID + "]" + " CmdType [" + resp.cmdType + "] " + "Error [" + resp.errorCode + "]");
                 if (listener != null) {
                     this.listener.onReceive(resp.cmdType, reqID, resp.errorCode, resp);
+                }
+
+                if (null != this.pluginClientDelegate) {
+                    if(null != pluginClientDelegate.dlgReceive) {
+                        this.pluginClientDelegate.dlgReceive(resp.cmdType, reqID, resp.errorCode, resp);
+                    }
                 }
 
                 if (request.ContainsKey(reqID)) {
@@ -523,6 +620,12 @@ namespace PluginICAOClientSDK {
                         DocumentDetailsResp documentDetails = getDocumentDetails(json);
                         listener.onReceivedDocument(documentDetails);
                     }
+                    else if (null != this.pluginClientDelegate) {
+                        DocumentDetailsResp documentDetails = getDocumentDetails(json);
+                        if (null != this.pluginClientDelegate.dlgReceivedDocument) {
+                            this.pluginClientDelegate.dlgReceivedDocument(documentDetails);
+                        }
+                    }
                     else {
                         DocumentDetailsResp documentDetails = getDocumentDetails(json);
                         if (null != delegateAuto) {
@@ -536,6 +639,12 @@ namespace PluginICAOClientSDK {
                         BiometricAuthResp baseBiometricAuthResp = biometricAuthentication(json);
                         listener.onReceivedBiometricResult(baseBiometricAuthResp);
                     }
+                    else if (null != this.pluginClientDelegate) {
+                        BiometricAuthResp baseBiometricAuthResp = biometricAuthentication(json);
+                        if (null != this.pluginClientDelegate.dlgReceivedBiometricResult) {
+                            this.pluginClientDelegate.dlgReceivedBiometricResult(baseBiometricAuthResp);
+                        }
+                    }
                     else {
                         BiometricAuthResp baseBiometricAuthResp = biometricAuthentication(json);
                         if (null != this.delegatebiometricResult) {
@@ -548,17 +657,24 @@ namespace PluginICAOClientSDK {
                         CardDetectionEventResp baseCardDetectionEventResp = cardDetectionEvent(json);
                         listener.onReceviedCardDetectionEvent(baseCardDetectionEventResp);
                     }
+                    else if (null != this.pluginClientDelegate) {
+                        CardDetectionEventResp baseCardDetectionEventResp = cardDetectionEvent(json);
+                        if (null != this.pluginClientDelegate.dlgReceviedCardDetectionEvent) {
+                            this.pluginClientDelegate.dlgReceviedCardDetectionEvent(baseCardDetectionEventResp);
+                        }
+                    }
                     else {
                         CardDetectionEventResp baseCardDetectionEventResp = cardDetectionEvent(json);
-                        if(null != this.delegateCardEvent) {
+                        if (null != this.delegateCardEvent) {
                             delegateCardEvent(baseCardDetectionEventResp);
                         }
                     }
                 }
                 else {
                     LOGGER.Debug("Not found Request with RequestID [" + reqID + "]" + " skip Response [" + json + "]");
-                    if(resp.errorCode == Utils.ERR_FOR_DENIED_CONNECTION) {
-                        if(null != listener) {
+                    if (resp.errorCode == Utils.ERR_FOR_DENIED_CONNECTION) {
+                        if (null != listener) {
+                            LOGGER.Debug("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
                             listener.onConnectDenied();
                         }
                     }

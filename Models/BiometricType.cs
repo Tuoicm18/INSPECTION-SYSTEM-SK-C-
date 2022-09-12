@@ -1,18 +1,13 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System;
+﻿using System;
 using System.ComponentModel;
 
 namespace PluginICAOClientSDK.Models {
     public enum BiometricType {
         [Description("faceID")]
-        [JsonConverter(typeof(StringEnumConverter))]
-        TYPE_FACE,
+        FACE_ID,
         [Description("fingerLeftIndex")]
-        [JsonConverter(typeof(StringEnumConverter))]
-        TYPE_FINGER_LEFT,
+        LEFT_FINGER,
         [Description("fingerRightIndex")]
-        [JsonConverter(typeof(StringEnumConverter))]
-        TYPE_FINGER_RIGHT,
+        RIGHT_FINGER
     }
 }
