@@ -15,8 +15,10 @@ namespace PluginICAOClientSDK.Models {
         public string issuanceDate { get; set; }
         public string expiryDate { get; set; }
         public string idDocument { get; set; }
-        public string fullNameOfFather { get; set; }
-        public string fullNameOfMother { get; set; }
+        //Update 2022.09.20 Replace fullNameOfFather & fullNameOfMother with fullNameOfParents
+        public string fullNameOfParents { get; set; }
+        //public string fullNameOfFather { get; set; }
+        //public string fullNameOfMother { get; set; }
         public string fullNameOfSpouse { get; set; }
     }
 }
