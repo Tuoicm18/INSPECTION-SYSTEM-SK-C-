@@ -1,9 +1,6 @@
 ﻿using PluginICAOClientSDK.Request;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PluginICAOClientSDK.Models {
     public class TransactionDataBiometricAuth {
@@ -12,5 +9,6 @@ namespace PluginICAOClientSDK.Models {
         public List<AuthorizationElement> multipleSelectList { get; set; }
         public List<AuthorizationElement> singleSelectList { get; set; }
         public List<AuthorizationElement> nameValuePairList { get; set; }
+        public List<AuthorizationElement> documentDigestList { get; set; }
     }
 }

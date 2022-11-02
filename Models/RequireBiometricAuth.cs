@@ -7,6 +7,7 @@ namespace PluginICAOClientSDK.Models {
         public string cardNo { get; set; }
 
         public bool livenessEnabled { get; set; }
+        public bool biometricEvidenceEnabled { get; set; }
 
         public string challengeType { get; set; }
 

@@ -15,6 +15,7 @@ using PluginICAOClientSDK.Response.DisplayInformation;
 using PluginICAOClientSDK.Response.CardDetectionEvent;
 using WebSocketSharp;
 using PluginICAOClientSDK.Response.ScanDocument;
+using PluginICAOClientSDK.Response.BiometricEvidence;
 
 namespace PluginICAOClientSDK {
 
@@ -42,6 +43,7 @@ namespace PluginICAOClientSDK {
         private const string FUNC_DISPLAY_INFO = "DisplayInformation";
         private const string FUNC_REFRESH = "Refresh";
         private const string FUNC_SCAN_DOCUMENT = "ScanDocument";
+        private const string FUNC_BIOMETRIC_EVIDENCE = "BiometricEvidence";
         #endregion
 
         #region DELEGATE 
@@ -589,6 +591,13 @@ namespace PluginICAOClientSDK {
                                     sync.scanDocumentListenner.onScanDocument(scanDocumentResp);
                                 }
                                 break;
+                            case FUNC_BIOMETRIC_EVIDENCE: //Func 2.11
+                                BiometricEvidenceResp biometricEvidenceResp = biometricEvidence(json);
+                                sync.setSuccess(biometricEvidenceResp);
+                                if(sync.biometricEvidenceListenner != null) {
+                                    sync.biometricEvidenceListenner.onBiometricEvidence(biometricEvidenceResp);
+                                }
+                                break;
                         }
                     }
                     catch (Exception ex) {
@@ -610,6 +619,9 @@ namespace PluginICAOClientSDK {
                         }
                         if (sync.scanDocumentListenner != null) {
                             sync.scanDocumentListenner.onError(ex);
+                        }
+                        if(sync.biometricEvidenceListenner != null) {
+                            sync.biometricEvidenceListenner.onError(ex);
                         }
                     } finally {
                         request.Remove(reqID);
@@ -729,6 +741,13 @@ namespace PluginICAOClientSDK {
         private ScanDocumentResp scanDocument(string json) {
             ScanDocumentResp scanDocument = JsonConvert.DeserializeObject<ScanDocumentResp>(json);
             return scanDocument;
+        }
+        #endregion
+
+        #region BIOMETRIC EVIDENCE 2022.11.02
+        private BiometricEvidenceResp biometricEvidence(string json) {
+            BiometricEvidenceResp biometricEvidenceResp = JsonConvert.DeserializeObject<BiometricEvidenceResp>(json);
+            return biometricEvidenceResp;
         }
         #endregion
     }

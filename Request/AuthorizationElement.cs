@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using PluginICAOClientSDK.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -30,6 +31,10 @@ namespace PluginICAOClientSDK.Request {
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, string> nameValuePair { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public DocumentDigest documentDigest { get; set; }
+
     }
 
     public enum AuthElementType {
@@ -40,6 +45,8 @@ namespace PluginICAOClientSDK.Request {
         [Description("Single")]
         Single,
         [Description("NVP")]
-        NVP
+        NVP,
+        [Description("DocDigest")]
+        DocDigest
     }
 }

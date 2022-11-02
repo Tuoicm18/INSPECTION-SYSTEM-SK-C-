@@ -23,5 +23,7 @@ namespace PluginICAOClientSDK.Models {
         Refresh,
         [Description("ScanDocument")]
         ScanDocument,
+        [Description("BiometricEvidence")]
+        BiometricEvidence,
     }
 }

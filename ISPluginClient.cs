@@ -8,6 +8,7 @@ using PluginICAOClientSDK.Response.ConnectToDevice;
 using PluginICAOClientSDK.Response.DisplayInformation;
 using PluginICAOClientSDK.Response.CardDetectionEvent;
 using PluginICAOClientSDK.Response.ScanDocument;
+using PluginICAOClientSDK.Response.BiometricEvidence;
 
 namespace PluginICAOClientSDK {
     public class ISPluginClient {
@@ -84,6 +85,10 @@ namespace PluginICAOClientSDK {
 
         public interface ScanDocumentListenner : DetailsListener {
             void onScanDocument(ScanDocumentResp resultScanDocument);
+        }
+
+        public interface BiometricEvidenceListenner : DetailsListener {
+            void onBiometricEvidence(BiometricEvidenceResp biometricEvidenceResp);
         }
 
         public interface ISListener {
@@ -289,16 +294,19 @@ namespace PluginICAOClientSDK {
         //
         // Exception: Unconnected exception occurs, some other exceptions.
         public BiometricAuthResp biometricAuthentication(BiometricType biometricType, object challengeBiometric,
-                                                         ChallengeType challengeType, bool livenessEnabled, string cardNo,
-                                                         int timeoutInterval) {
+                                                         ChallengeType challengeType, bool livenessEnabled,
+                                                         string cardNo, int timeoutInterval,
+                                                         bool biometricEvidenceEnabled) {
             return (BiometricAuthResp)biometricAuthenticationAsync(biometricType, challengeBiometric,
-                                                                   challengeType, livenessEnabled, cardNo,
-                                                                   timeoutInterval, null).waitResponse(timeoutInterval);
+                                                                   challengeType, livenessEnabled,
+                                                                   cardNo, timeoutInterval,
+                                                                   biometricEvidenceEnabled, null).waitResponse(timeoutInterval);
         }
 
         public ResponseSync<object> biometricAuthenticationAsync(BiometricType biometricType, object challengeBiometric,
-                                                                 ChallengeType challengeType, bool livenessEnabled, string cardNo,
-                                                                 int timeoutInterval, BiometricAuthListener biometricAuthListener) {
+                                                                 ChallengeType challengeType, bool livenessEnabled,
+                                                                 string cardNo, int timeoutInterval,
+                                                                 bool biometricEvidenceEnabled, BiometricAuthListener biometricAuthListener) {
             string cmdType = Utils.ToDescription(CmdType.BiometricAuthentication);
             string reqID = Utils.getUUID();
 
@@ -308,6 +316,7 @@ namespace PluginICAOClientSDK {
             requireBiometricAuth.challengeType = Utils.ToDescription(challengeType);
             requireBiometricAuth.challenge = challengeBiometric;
             requireBiometricAuth.livenessEnabled = livenessEnabled;
+            requireBiometricAuth.biometricEvidenceEnabled = biometricEvidenceEnabled;
 
             ISRequest<object> req = new ISRequest<object>();
             req.cmdType = cmdType;
@@ -495,6 +504,47 @@ namespace PluginICAOClientSDK {
             ResponseSync<object> responseSync = new ResponseSync<object>();
             responseSync.cmdType = cmdType;
             responseSync.scanDocumentListenner = scanDocumentListenner;
+            responseSync.Wait = new System.Threading.CountdownEvent(1);
+
+            wsClient.request.Add(reqID, responseSync);
+
+            if (this.listener != null) {
+                this.listener.doSend(cmdType, reqID, req);
+            }
+
+            if (null != this.pluginClientDelegate) {
+                if (null != this.pluginClientDelegate.dlgSend) {
+                    pluginClientDelegate.dlgSend(cmdType, reqID, req);
+                }
+            }
+
+            wsClient.sendData(JsonConvert.SerializeObject(req));
+            return responseSync;
+        }
+        #endregion
+
+        #region BIOMETRIC EVIDENCE
+        public BiometricEvidenceResp biometricEvidence(BiometricType biometricType, int timeoutInterval) {
+            return (BiometricEvidenceResp)biometricEvidenceAsync(biometricType, timeoutInterval, null).waitResponse(timeoutInterval);
+        }
+
+        public ResponseSync<object> biometricEvidenceAsync(BiometricType biometricType, int timeoutInterval, BiometricEvidenceListenner biometricEvidenceListenner) {
+            string cmdType = Utils.ToDescription(CmdType.BiometricEvidence);
+            string reqID = Utils.getUUID();
+            RequireBiometricEvidence requireBiometricEvidence = new RequireBiometricEvidence();
+            requireBiometricEvidence.biometricType = Utils.ToDescription(biometricType);
+
+            ISRequest<object> req = new ISRequest<object>();
+            req.cmdType = Utils.ToDescription(CmdType.BiometricEvidence);
+            req.requestID = reqID;
+            req.timeoutInterval = timeoutInterval;
+            req.data = requireBiometricEvidence;
+
+            LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
+
+            ResponseSync<object> responseSync = new ResponseSync<object>();
+            responseSync.cmdType = cmdType;
+            responseSync.biometricEvidenceListenner = biometricEvidenceListenner;
             responseSync.Wait = new System.Threading.CountdownEvent(1);
 
             wsClient.request.Add(reqID, responseSync);
