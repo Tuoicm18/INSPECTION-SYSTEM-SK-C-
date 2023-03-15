@@ -71,6 +71,7 @@
     <Compile Include="Models\DocumentDigest.cs" />
     <Compile Include="Models\NotifyAutoReadDocument.cs" />
     <Compile Include="Models\RequireBiometricEvidence.cs" />
+    <Compile Include="Models\RequireEnrollFingerprint.cs" />
     <Compile Include="Models\ScanDocument.cs" />
     <Compile Include="Models\ScanType.cs" />
     <Compile Include="Models\TransactionDataBiometricAuth.cs" />
@@ -100,6 +101,8 @@
     <Compile Include="Request\MultipleSelect.cs" />
     <Compile Include="Response\DisplayInformation\DisplayInformationResp.cs" />
     <Compile Include="Response\DisplayInformation\DataDisplayInformation.cs" />
+    <Compile Include="Response\EnrollFingerprint\DataEnrollFingerprintcs.cs" />
+    <Compile Include="Response\EnrollFingerprint\EnrollFingerprintResp.cs" />
     <Compile Include="Response\GetDocumentDetails\DocumentDetailsResp.cs" />
     <Compile Include="Response\GetDocumentDetails\DataDocumentDetails.cs" />
     <Compile Include="Models\MultipleSelected.cs" />

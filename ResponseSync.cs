@@ -20,6 +20,7 @@ namespace PluginICAOClientSDK {
         public ISPluginClient.DisplayInformationListener displayInformationListener { get; set; }
         public ISPluginClient.ScanDocumentListenner scanDocumentListenner { get; set; }
         public ISPluginClient.BiometricEvidenceListenner biometricEvidenceListenner { get; set; }
+        public ISPluginClient.EnrollFingerprintListenner enrollFingerprintListenner { get; set; }
 
         public T waitResponse (int timeout) {
             try {

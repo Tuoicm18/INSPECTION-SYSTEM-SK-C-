@@ -16,6 +16,7 @@ using PluginICAOClientSDK.Response.CardDetectionEvent;
 using WebSocketSharp;
 using PluginICAOClientSDK.Response.ScanDocument;
 using PluginICAOClientSDK.Response.BiometricEvidence;
+using PluginICAOClientSDK.Response.EnrollFingerprint;
 
 namespace PluginICAOClientSDK {
 
@@ -44,6 +45,7 @@ namespace PluginICAOClientSDK {
         private const string FUNC_REFRESH = "Refresh";
         private const string FUNC_SCAN_DOCUMENT = "ScanDocument";
         private const string FUNC_BIOMETRIC_EVIDENCE = "BiometricEvidence";
+        private const string FUNC_ENROLL_FINGERPRINT = "EnrollFingerprint";
         #endregion
 
         #region DELEGATE 
@@ -598,6 +600,13 @@ namespace PluginICAOClientSDK {
                                     sync.biometricEvidenceListenner.onBiometricEvidence(biometricEvidenceResp);
                                 }
                                 break;
+                            case FUNC_ENROLL_FINGERPRINT: //Func 2.12
+                                EnrollFingerprintResp enrollFingerprintResponse = enrollFingerprint(json);
+                                sync.setSuccess(enrollFingerprintResponse);
+                                if(sync.enrollFingerprintListenner != null) {
+                                    sync.enrollFingerprintListenner.onEnrollFingerprint(enrollFingerprintResponse);
+                                }
+                                break;
                         }
                     }
                     catch (Exception ex) {
@@ -750,5 +759,12 @@ namespace PluginICAOClientSDK {
             return biometricEvidenceResp;
         }
         #endregion
+
+        #region ENROLL FINGERPRINT 2023.03.15
+        private EnrollFingerprintResp enrollFingerprint(string json) {
+            EnrollFingerprintResp enrollFingerprintResp = JsonConvert.DeserializeObject<EnrollFingerprintResp>(json);
+            return enrollFingerprintResp;
+        }
+        #endregion 
     }
 }

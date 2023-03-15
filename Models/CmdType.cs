@@ -25,5 +25,7 @@ namespace PluginICAOClientSDK.Models {
         ScanDocument,
         [Description("BiometricEvidence")]
         BiometricEvidence,
+        [Description("EnrollFingerprint")]
+        EnrollFingerprint
     }
 }

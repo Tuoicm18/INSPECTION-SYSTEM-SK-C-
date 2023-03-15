@@ -9,6 +9,7 @@ using PluginICAOClientSDK.Response.DisplayInformation;
 using PluginICAOClientSDK.Response.CardDetectionEvent;
 using PluginICAOClientSDK.Response.ScanDocument;
 using PluginICAOClientSDK.Response.BiometricEvidence;
+using PluginICAOClientSDK.Response.EnrollFingerprint;
 
 namespace PluginICAOClientSDK {
     public class ISPluginClient {
@@ -89,6 +90,10 @@ namespace PluginICAOClientSDK {
 
         public interface BiometricEvidenceListenner : DetailsListener {
             void onBiometricEvidence(BiometricEvidenceResp biometricEvidenceResp);
+        }
+
+        public interface EnrollFingerprintListenner: DetailsListener {
+            void onEnrollFingerprint(EnrollFingerprintResp enrollFingerprintResp);
         }
 
         public interface ISListener {
@@ -545,6 +550,47 @@ namespace PluginICAOClientSDK {
             ResponseSync<object> responseSync = new ResponseSync<object>();
             responseSync.cmdType = cmdType;
             responseSync.biometricEvidenceListenner = biometricEvidenceListenner;
+            responseSync.Wait = new System.Threading.CountdownEvent(1);
+
+            wsClient.request.Add(reqID, responseSync);
+
+            if (this.listener != null) {
+                this.listener.doSend(cmdType, reqID, req);
+            }
+
+            if (null != this.pluginClientDelegate) {
+                if (null != this.pluginClientDelegate.dlgSend) {
+                    pluginClientDelegate.dlgSend(cmdType, reqID, req);
+                }
+            }
+
+            wsClient.sendData(JsonConvert.SerializeObject(req));
+            return responseSync;
+        }
+        #endregion
+
+        #region ENROLL FINGERPRINT
+        public BiometricEvidenceResp enrollFIngerprint(string cardNoInput, int timeoutInterval) {
+            return (BiometricEvidenceResp)enrollFIngerprintAsync(cardNoInput, timeoutInterval, null).waitResponse(timeoutInterval);
+        }
+
+        public ResponseSync<object> enrollFIngerprintAsync(string cardNoInput, int timeoutInterval, EnrollFingerprintListenner enrollFingerprintListenner) {
+            string cmdType = Utils.ToDescription(CmdType.EnrollFingerprint);
+            string reqID = Utils.getUUID();
+            RequireEnrollFingerprint requireEnrollFingerprint = new RequireEnrollFingerprint();
+            requireEnrollFingerprint.cardNo = cardNoInput;
+
+            ISRequest<object> req = new ISRequest<object>();
+            req.cmdType = Utils.ToDescription(CmdType.EnrollFingerprint);
+            req.requestID = reqID;
+            req.timeoutInterval = timeoutInterval;
+            req.data = requireEnrollFingerprint;
+
+            LOGGER.Debug(">>> SEND: [" + JsonConvert.SerializeObject(req) + "]");
+
+            ResponseSync<object> responseSync = new ResponseSync<object>();
+            responseSync.cmdType = cmdType;
+            responseSync.enrollFingerprintListenner = enrollFingerprintListenner;
             responseSync.Wait = new System.Threading.CountdownEvent(1);
 
             wsClient.request.Add(reqID, responseSync);
