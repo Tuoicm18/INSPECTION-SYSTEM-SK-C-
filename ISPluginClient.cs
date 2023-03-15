@@ -570,8 +570,8 @@ namespace PluginICAOClientSDK {
         #endregion
 
         #region ENROLL FINGERPRINT
-        public BiometricEvidenceResp enrollFIngerprint(string cardNoInput, int timeoutInterval) {
-            return (BiometricEvidenceResp)enrollFIngerprintAsync(cardNoInput, timeoutInterval, null).waitResponse(timeoutInterval);
+        public EnrollFingerprintResp enrollFIngerprint(string cardNoInput, int timeoutInterval) {
+            return (EnrollFingerprintResp)enrollFIngerprintAsync(cardNoInput, timeoutInterval, null).waitResponse(timeoutInterval);
         }
 
         public ResponseSync<object> enrollFIngerprintAsync(string cardNoInput, int timeoutInterval, EnrollFingerprintListenner enrollFingerprintListenner) {
